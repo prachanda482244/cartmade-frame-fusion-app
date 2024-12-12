@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "6584b623d2297c6e18d1d91c103bfe69"
+application_url = "https://bermuda-when-naturals-leaving.trycloudflare.com"
+embedded = true
+name = "frame-fusion"
+handle = "frame-fusion"
+
+[webhooks]
+api_version = "2024-10"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_files,read_files,write_themes"
+
+[auth]
+redirect_urls = [
+  "https://bermuda-when-naturals-leaving.trycloudflare.com/auth/callback",
+  "https://bermuda-when-naturals-leaving.trycloudflare.com/auth/shopify/callback",
+  "https://bermuda-when-naturals-leaving.trycloudflare.com/api/auth/callback"
+]
+
+[pos]
+embedded = false
+
+[build]
+dev_store_url = "prachanda-test.myshopify.com"
+automatically_update_urls_on_dev = true
