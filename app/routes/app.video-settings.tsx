@@ -14,8 +14,8 @@ import {
 import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
-import { LoaderResponse } from "types/type";
-import { generateRandomString } from "utils/utils";
+import { LoaderResponse } from "app/types/type";
+import { generateRandomString } from "app/utils/utils";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -30,7 +30,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const metafieldData = {
       namespace: "carousel-title",
       key,
-      value: JSON.stringify({ title, date }),
+      value: JSON.stringify({ title, date, videoUrl: [] }),
       type: "json",
       owner_resource: "shop",
     };
@@ -222,7 +222,7 @@ const VideoSettingPage = () => {
             }
             className="hover:underline"
           >
-            {title}
+            {title || "Title"}
           </span>
         </IndexTable.Cell>
         <IndexTable.Cell>{date}</IndexTable.Cell>
