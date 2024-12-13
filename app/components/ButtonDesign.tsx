@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   TextField,
   Card,
@@ -7,6 +7,7 @@ import {
   RangeSlider,
   Page,
   Button,
+  Checkbox,
 } from "@shopify/polaris";
 import { useFetcher } from "@remix-run/react";
 import InputColorPicker from "./InputColorPicker";
@@ -74,9 +75,24 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   if (fetcher.state === "loading") {
     shopify.toast.show("Button setting saved successfully");
   }
+  const [turnOnBorder, setTurOnBorder] = useState(false);
+  const [muteSound, setMuteSound] = useState(false);
+  const [addToCart, setAddToCart] = useState(false);
+  const handleChange = useCallback(
+    (newChecked: boolean) => setTurOnBorder(newChecked),
+    [],
+  );
+  const handleMuteChange = useCallback(
+    (newChecked: boolean) => setMuteSound(newChecked),
+    [],
+  );
 
+  const handleAddToCartChange = useCallback(
+    (newChecked: boolean) => setAddToCart(newChecked),
+    [],
+  );
   return (
-    <div className="space-y-2 p-8 bg-gray-50 rounded-lg shadow-lg">
+    <div className="">
       <div className="text-right">
         <Button
           variant="primary"
@@ -107,41 +123,53 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
           </Card>
         </div>
         <Card>
-          <div className="button-settings-wrapper flex flex-wrap gap-4">
-            <div className="flex border-0  sm:border-r-2 sm:pr-4 flex-col gap-3 button-settings-item">
-              <div className="max-w-[264px]">
-                <TextField
-                  size="slim"
-                  autoComplete="true"
-                  label="Button Title"
-                  value={buttonText}
-                  onChange={handleButtonTextChange}
-                />
-              </div>
+          {/* <div className="button-settings-wrapper flex flex-wrap gap-4"> */}
+          {/* <div className="flex border-0  sm:border-r-2 sm:pr-4 flex-col gap-3 button-settings-item"> */}
 
-              <InputColorPicker
-                title="Background Color"
-                setState={setBackgroundColor}
-                value={backgroundColor}
-              />
+          {/* <div className="max-w-full">
+            <TextField
+              size="slim"
+              autoComplete="true"
+              label="Button Title"
+              value={buttonText}
+              onChange={handleButtonTextChange}
+            />
+          </div> */}
 
-              <InputColorPicker
-                title="Text Color"
-                setState={setTextColor}
-                value={textColor}
-              />
-              <InputColorPicker
-                title="Shadow Color"
-                setState={setShadowColor}
-                value={shadowColor}
-              />
-              <InputColorPicker
-                title="Border Color"
-                setState={setBorderColor}
-                value={borderColor}
-              />
+          <div className=" flex max-w-lg flex-col gap-5">
+            <Checkbox
+              label="Turn on Border"
+              checked={turnOnBorder}
+              onChange={handleChange}
+            />
+            <InputColorPicker
+              title="Border Color"
+              setState={setBorderColor}
+              value={borderColor}
+            />
 
-              <div className=" flex max-w-[256px] flex-col gap-5">
+            <RangeSlider
+              label="Border width"
+              min={0}
+              max={15}
+              value={borderWidth}
+              onChange={handleBorderWidthChange}
+              output
+            />
+
+            <Checkbox
+              label="Mute Sound"
+              checked={muteSound}
+              onChange={handleMuteChange}
+            />
+
+            <Checkbox
+              label="Add to Cart"
+              checked={addToCart}
+              onChange={handleAddToCartChange}
+            />
+
+            {/* 
                 <RangeSlider
                   label="Font size"
                   value={fontSize}
@@ -149,50 +177,11 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                   max={30}
                   onChange={handleFontSizeChange}
                   output
-                />
-                <RangeSlider
-                  label="Border radius"
-                  value={borderRadius}
-                  min={1}
-                  max={15}
-                  onChange={handleBorderRadiusChange}
-                  output
-                />
-                <RangeSlider
-                  label="Border width"
-                  min={0}
-                  max={15}
-                  value={borderWidth}
-                  onChange={handleBorderWidthChange}
-                  output
-                />
-                <RangeSlider
-                  label="Shadow"
-                  min={0}
-                  max={15}
-                  value={shadow}
-                  onChange={handleShadowChange}
-                  output
-                />
-                <RangeSlider
-                  label="Padding Y"
-                  value={paddingY}
-                  min={5}
-                  max={25}
-                  onChange={handlePaddingYChange}
-                  output
-                />
-                <RangeSlider
-                  label="Padding X"
-                  value={paddingX}
-                  min={5}
-                  max={25}
-                  onChange={handlePaddingXChange}
-                  output
-                />
-              </div>
-            </div>
-            <div className="flex flex-col button-settings-item">
+                /> */}
+          </div>
+          {/* </div> */}
+
+          {/* <div className="flex flex-col button-settings-item">
               <Layout.Section variant="oneHalf">
                 <LivePreview />
                 <Card>
@@ -218,8 +207,8 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                   </div>
                 </Card>
               </Layout.Section>
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
         </Card>
       </div>
     </div>

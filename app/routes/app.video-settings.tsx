@@ -30,7 +30,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const metafieldData = {
       namespace: "carousel-title",
       key,
-      value: JSON.stringify({ title, date, videoUrl: [] }),
+      value: JSON.stringify({
+        title,
+        date,
+        videoUrls: [{ url: "", products: [] }],
+      }),
       type: "json",
       owner_resource: "shop",
     };
@@ -45,7 +49,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         },
       );
-
       console.log(data, "response");
       return {
         success: true,
@@ -170,6 +173,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const videoMetafields = response.data.shop.metafields.edges.map(
     (edge: any) => edge.node,
   );
+
+  console.log(videoMetafields, "loader response");
   return {
     pageInfo,
     videoMetafields,
@@ -179,6 +184,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const VideoSettingPage = () => {
   const fetcher = useFetcher();
   const { pageInfo, videoMetafields, query } = useLoaderData<LoaderResponse>();
+  console.log(videoMetafields);
   const navigate = useNavigate();
   const onCreateNewView = () => {
     shopify.modal.show("add-carousel");
@@ -193,6 +199,7 @@ const VideoSettingPage = () => {
 
   const handleSubmit = async () => {
     setAddLoading(true);
+
     const formData = new FormData();
     formData.append("carousel-title", title);
     fetcher.submit(formData, { method: "POST" });
@@ -248,11 +255,11 @@ const VideoSettingPage = () => {
   ];
 
   const handleVideoDelete = () => {
+    setDeleteLoading(true);
     const formData = new FormData();
     formData.append("metafieldIds", JSON.stringify(selectedResources));
     formData.append("query", query);
     fetcher.submit(formData, { method: "delete" });
-    setDeleteLoading(true);
     selectedResources.splice(0, selectedResources.length);
     shopify.modal.hide("delete-modal");
   };
@@ -260,7 +267,7 @@ const VideoSettingPage = () => {
   useEffect(() => {
     setDeleteLoading(false);
     setAddLoading(false);
-  }, [videoMetafields, pageInfo]);
+  }, [fetcher.state === "loading"]);
   return (
     <Page
       backAction={{ content: "Settings", url: "/app" }}
@@ -277,6 +284,7 @@ const VideoSettingPage = () => {
             heading="Manage your Carousel"
             action={{
               content: "Add new carousel",
+              loading: addLoading,
               onAction: onCreateNewView,
             }}
             image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
@@ -295,7 +303,7 @@ const VideoSettingPage = () => {
             </div>
           ) : null}
           <IndexTable
-            condensed={useBreakpoints().smDown}
+            // condensed={useBreakpoints()?.smDown}
             resourceName={resourceName}
             itemCount={videoMetafields.length || 0}
             selectedItemsCount={

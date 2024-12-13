@@ -42,7 +42,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     console.log(resourceUrl, "resoururl");
 
-    console.log(id, "ID");
+    fs.unlink(videoPath, (err) => {
+      if (err) {
+        console.error("file deleted successfully");
+      }
+    });
     const shopQuery = `
     query {
         shop {
@@ -74,60 +78,53 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       },
     });
     const metaFieldResponse = await response.json();
-    console.log(metaFieldResponse.data.node.jsonValue, "metafieldreposen");
-    const nameSpace = metaFieldResponse.data.node.namespace;
+    const namespace = metaFieldResponse.data.node.namespace;
     const key = metaFieldResponse.data.node.key;
-    const title = metaFieldResponse.data.node.jsonValue.title || "Carousel";
-    const date = metaFieldResponse.data.node.jsonValue.date || "";
-    const currentVideoUrls = metaFieldResponse.data.node.jsonValue[0]?.videoUrl
-      ? metaFieldResponse.data.node.jsonValue[0].videoUrl
-      : [];
-    currentVideoUrls.push(resourceUrl);
-    const updateQuery = `
-   mutation UpdateShopMetafield($metafields: [MetafieldsSetInput!]!) {
-  metafieldsSet(metafields: $metafields) {
-    metafields {
-      id
-      namespace
-      key
-      value
-      type
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}
-`;
 
-    const data = [{ title, date, videoUrl: currentVideoUrls }];
-    console.log(data, "Data");
-    const metaResponse = await admin.graphql(updateQuery, {
+    const currentJsonValue = metaFieldResponse.data.node.jsonValue;
+    const updatedData = {
+      ...currentJsonValue,
+      videoUrls: [
+        ...(currentJsonValue.videoUrls || []).filter((item: any) => item.url),
+        { url: resourceUrl, products: [] },
+      ],
+    };
+    const updateQuery = `
+       mutation UpdateShopMetafield($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        metafields {
+          id
+          namespace
+          key
+          value
+          type
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    `;
+
+    const updateResponse = await admin.graphql(updateQuery, {
       variables: {
         metafields: [
           {
             ownerId: shopId,
-            namespace: nameSpace,
+            namespace,
             key,
-            value: JSON.stringify(data),
+            value: JSON.stringify(updatedData),
             type: "json",
           },
         ],
       },
     });
 
-    const metaDataresponse = await metaResponse.json();
+    const metaDataresponse = await updateResponse.json();
     const actualData = metaDataresponse.data.metafieldsSet.metafields;
-    if (!actualData) {
-      return {
-        error: true,
-        message: "Somethin went wrong",
-      };
-    }
-    return {
-      data: actualData,
-    };
+    console.log(actualData, "ACTUAL DATA");
+    return { data: actualData };
 
     // const createFileQuery = `mutation fileCreate($files: [FileCreateInput!]!) {
     //   fileCreate(files: $files) {
@@ -186,6 +183,95 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     //   const { data } = await response.json();
     //   console.log(data, "Data recive");
   }
+  if (request.method === "PUT" || request.method === "put") {
+    const url = new URL(request.url);
+    const id = Number(url.pathname.split("/").pop());
+
+    const formData = await request.formData();
+
+    const videoProducts = formData.get("videoProducts") as string;
+    const shopQuery = `
+    query {
+        shop {
+          id
+        }
+      }
+    `;
+    const shopData = await admin.graphql(shopQuery);
+    const shopResponse = await shopData.json();
+    const shopId = shopResponse.data.shop.id;
+    const incomingData = JSON.parse(videoProducts);
+    const metaFieldQuery = `
+    query GetMetafield($id: ID!) {
+  node(id: $id) {
+    ... on Metafield {
+      id
+      namespace
+      key
+      value
+      jsonValue
+      ownerType
+    }
+  }
+}
+`;
+    const response = await admin.graphql(metaFieldQuery, {
+      variables: {
+        id: `gid://shopify/Metafield/${id}`,
+      },
+    });
+
+    const metaFieldResponse = await response.json();
+
+    const namespace = metaFieldResponse.data.node.namespace;
+    const key = metaFieldResponse.data.node.key;
+
+    const currentJsonValue = metaFieldResponse.data.node.jsonValue;
+
+    const updatedData = {
+      ...currentJsonValue,
+      videoUrls: incomingData,
+    };
+    console.log(updatedData, "UPDATE DATA");
+    const updateQuery = `
+       mutation UpdateShopMetafield($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        metafields {
+          id
+          namespace
+          key
+          value
+          type
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+    `;
+
+    const updateResponse = await admin.graphql(updateQuery, {
+      variables: {
+        metafields: [
+          {
+            ownerId: shopId,
+            namespace,
+            key,
+            value: JSON.stringify(updatedData),
+            type: "json",
+          },
+        ],
+      },
+    });
+    const metaDataresponse = await updateResponse.json();
+    console.log(metaDataresponse.data.metafieldsSet, "Metadata");
+    console.log(metaDataresponse.data.metafieldsSet.metafields, "metafields");
+    const actualData = metaDataresponse.data.metafieldsSet.metafields;
+    console.log(actualData);
+
+    return { data: actualData };
+  }
 };
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -202,7 +288,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         id
         namespace
         key
-        value
         jsonValue
         type
       }
@@ -221,10 +306,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         console.warn("No  metafield found.");
         return { error: "Data not found." };
       }
-
-      return { data: data.node.jsonValue };
+      if (data.node.jsonValue.videoUrls.length === 0) {
+        return {
+          videoUrls: [],
+        };
+      }
+      return { videoUrls: data.node.jsonValue.videoUrls };
     } catch (error) {
-      console.error("Error fetching PDF metafields:", error);
+      console.error("Error fetching  metafields:", error);
       return { error: "Unexpected error occurred while fetching metafield." };
     }
   }
@@ -242,8 +331,7 @@ const VideoSettingPage = () => {
     setUrl(newValue);
   }, []);
   const loaderData: any = useLoaderData();
-  console.log(loaderData.data, "Detail page");
-  const videoUrls = loaderData.data[0].videoUrl;
+  console.log(loaderData, "Detail page fkin");
   const handleFileChange = () => {
     const file = fileInputRef.current?.files?.[0];
     if (file) {
@@ -259,7 +347,8 @@ const VideoSettingPage = () => {
   };
   useEffect(() => {
     setIsLoading(false);
-  }, [loaderData]);
+  }, [fetcher.state === "loading"]);
+  console.log(loaderData.videoUrls, ":videoooso");
   return (
     <Page
       backAction={{ content: "Settings", url: "/app/video-settings" }}
@@ -303,12 +392,15 @@ const VideoSettingPage = () => {
           <button variant="primary">Upload</button>
         </TitleBar>
       </Modal>
-      {!videoUrls ? (
+      {!loaderData ||
+      loaderData.videoUrls.length === 0 ||
+      loaderData.videoUrls[0].url === "" ? (
         <LegacyCard sectioned>
           <EmptyState
             heading="Manage your Carousel"
             action={{
-              content: "Upload Video     ",
+              content: "Upload Video",
+              loading: isLoading,
               onAction: () => {
                 fileInputRef.current?.click();
               },
@@ -322,7 +414,7 @@ const VideoSettingPage = () => {
           </EmptyState>
         </LegacyCard>
       ) : (
-        <VideoCarousel videoUrls={videoUrls} />
+        <VideoCarousel videoUrls={loaderData.videoUrls} isLoading={isLoading} />
       )}
     </Page>
   );
