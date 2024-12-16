@@ -27,10 +27,10 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const [turnOnBorder, setTurOnBorder] = useState(
     jsonValue?.turnOnBorder || false,
   );
-  const [muteSound, setMuteSound] = useState(jsonValue.muteSound || false);
-  const [addToCart, setAddToCart] = useState(jsonValue.addTocart || false);
-  const [loopVideo, setLoopVideo] = useState(jsonValue.loopVideo || false);
-  const [autoPlay, setAutoPlay] = useState(jsonValue.autoPlay || false);
+  const [muteSound, setMuteSound] = useState(jsonValue?.muteSound || false);
+  const [addToCart, setAddToCart] = useState(jsonValue?.addTocart || false);
+  const [loopVideo, setLoopVideo] = useState(jsonValue?.loopVideo || false);
+  const [autoPlay, setAutoPlay] = useState(jsonValue?.autoPlay || false);
 
   const handleBorderWidthChange = (value: number) => {
     setBorderWidth(value), shopify.saveBar.show("setting-save-bar");
