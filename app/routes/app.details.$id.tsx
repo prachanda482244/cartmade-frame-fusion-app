@@ -128,8 +128,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       fetchGraphQLQuery(admin, META_FIELD_QUERY, { id: metafieldId }),
       fetchGraphQLQuery(admin, VideoSettingQuery),
     ]);
-    const videoUrls = metafieldData.data.node.jsonValue.videoUrls || [];
-    const settingData = videoCarouselData.data.shop.metafield.jsonValue || {};
+
+    const videoUrls =
+      metafieldData.data.node.jsonValue !== null
+        ? metafieldData.data.node.jsonValue.videoUrls
+        : [];
+    const settingData =
+      videoCarouselData.data.shop.metafield !== null
+        ? videoCarouselData.data.shop.metafield.jsonValue
+        : {};
 
     return {
       videoUrls,
@@ -137,7 +144,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
   } catch (error) {
     console.error("Error fetching metafields:", error);
-    return { error: "Unexpected error occurred while fetching metafield." };
+    return {
+      error: "Unexpected error occurred while fetching metafield." + error,
+    };
   }
 };
 
@@ -153,7 +162,6 @@ const VideoSettingPage = () => {
     setUrl(newValue);
   }, []);
   const loaderData: any = useLoaderData();
-  console.log(loaderData, "Detail page fkin");
   const handleFileChange = () => {
     const file = fileInputRef.current?.files?.[0];
     if (file) {
@@ -170,7 +178,10 @@ const VideoSettingPage = () => {
   useEffect(() => {
     setIsLoading(false);
   }, [fetcher.state === "loading"]);
-  console.log(loaderData.videoUrls, ":videoooso");
+
+  if (fetcher.state === "loading") {
+    shopify.toast.show("Setting saved successfully");
+  }
   return (
     <Page
       backAction={{ content: "Settings", url: "/app/video-settings" }}
@@ -216,7 +227,8 @@ const VideoSettingPage = () => {
         </TitleBar>
       </Modal>
       {!loaderData ||
-      loaderData.videoUrls.length === 0 ||
+      !loaderData.videoUrls ||
+      loaderData.videoUrls?.length === 0 ||
       loaderData.videoUrls[0].url === "" ? (
         <LegacyCard sectioned>
           <EmptyState

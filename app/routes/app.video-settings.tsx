@@ -49,7 +49,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         },
       );
-      console.log(data, "response");
       return {
         success: true,
         data,
@@ -174,7 +173,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     (edge: any) => edge.node,
   );
 
-  console.log(videoMetafields, "loader response");
   return {
     pageInfo,
     videoMetafields,
@@ -183,14 +181,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 const VideoSettingPage = () => {
   const fetcher = useFetcher();
-  const { pageInfo, videoMetafields, query } = useLoaderData<LoaderResponse>();
-  console.log(videoMetafields);
+  const { videoMetafields, query } = useLoaderData<LoaderResponse>();
   const navigate = useNavigate();
   const onCreateNewView = () => {
     shopify.modal.show("add-carousel");
   };
   const [title, setTitle] = useState("");
   const [editTitle, setEditTitle] = useState("");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [addLoading, setAddLoading] = useState<boolean>(false);
   const handleChange = useCallback((newValue: string) => {
@@ -207,13 +206,23 @@ const VideoSettingPage = () => {
     shopify.modal.hide("add-carousel");
   };
 
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+      setCopiedKey(key);
+      shopify.toast.show("Copied to clipboard");
+      setTimeout(() => {
+        setCopiedKey(null);
+      }, 2000);
+    });
+  };
+
   const editModal = () => {
     shopify.modal.show("add-carousel");
   };
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(videoMetafields);
   const rowMarkup = videoMetafields.map(
-    ({ id, jsonValue: { title, date } }: any, index) => (
+    ({ id, key, jsonValue: { title, date } }: any, index) => (
       <IndexTable.Row
         id={id}
         key={id}
@@ -233,6 +242,17 @@ const VideoSettingPage = () => {
           </span>
         </IndexTable.Cell>
         <IndexTable.Cell>{date}</IndexTable.Cell>
+        <IndexTable.Cell>
+          {" "}
+          <p
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => handleCopyKey(key)}
+          >
+            <span className="p-1 relative px-2 shadow-md text-xs text-black rounded-md cursor-pointer hover:bg-black hover:text-white capitalize transition-colors">
+              {copiedKey === key ? "copied" : "copy key "}
+            </span>
+          </p>
+        </IndexTable.Cell>
       </IndexTable.Row>
     ),
   );
@@ -311,7 +331,7 @@ const VideoSettingPage = () => {
             }
             onSelectionChange={handleSelectionChange}
             promotedBulkActions={promotedBulkActions}
-            headings={[{ title: "Title" }, { title: "Date" }]}
+            headings={[{ title: "Title" }, { title: "Date" }, { title: "Key" }]}
           >
             {rowMarkup}
           </IndexTable>

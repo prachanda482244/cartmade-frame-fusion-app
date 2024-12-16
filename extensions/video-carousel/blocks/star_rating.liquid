@@ -1,0 +1,83 @@
+{{ 'https://cdn.tailwindcss.com' | script_tag }}
+
+
+{{ 'main.css' | asset_url | stylesheet_tag }}
+{% assign videoCarouselMetafields = shop.metafields.carousel-title %}
+{% assign videoCarouselTitle = videoCarouselMetafields[block.settings.metafield_key] %}
+{% assign videoCarouselSettings = shop.metafields.cartmade['video_carousel_setting'] %}
+
+{% assign videoCarouselData = videoCarouselTitle.value %}
+{% assign videoCarouselSettingData = videoCarouselSettings.value %}
+
+Video MetaField: {{ videoCarouselMetafields }}
+<br>
+
+Video metafield Data : {{ videoCarouselData}}
+
+<br>
+
+Video Carousel Setting Data : {{ videoCarouselSettingData }}
+
+<br>
+
+
+{%- style -%}
+.section-{{ block.id }}-padding {
+padding-top: {{ block.settings.padding_top | times: 0.75 | round: 0 }}px;
+padding-bottom: {{ block.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+}
+
+@media screen and (min-width: 750px) {
+.section-{{ block.id }}-padding {
+padding-top: {{ block.settings.padding_top }}px;
+padding-bottom: {{ block.settings.padding_bottom }}px;
+}
+}
+{%- endstyle -%}
+
+<div class="relative">
+  Hello world
+</div>
+
+
+<script src="{{ 'main.js' | asset_url }}" defer="defer"></script>
+
+{% schema %}
+{
+"name": "Frame-Fusion",
+"class": "section",
+"target": "section",
+"settings": [
+{
+"type": "text",
+"id": "metafield_key",
+"label": "PDF KEY",
+"default": "PDF KEY"
+},
+{
+"type": "header",
+"content": "Section padding"
+},
+{
+"type": "range",
+"id": "padding_top",
+"min": 0,
+"max": 200,
+"step": 4,
+"unit": "px",
+"label": "padding top",
+"default": 36
+},
+{
+"type": "range",
+"id": "padding_bottom",
+"min": 0,
+"max": 100,
+"step": 4,
+"unit": "px",
+"label": "padding bottom",
+"default": 36
+}
+]
+}
+{% endschema %}

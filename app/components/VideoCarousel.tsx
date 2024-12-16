@@ -22,9 +22,9 @@ const VideoCarousel = ({
   const [items, setItems] = useState(videoUrls);
   useEffect(() => {
     setItems(videoUrls);
-  }, [videoUrls]);
+  }, [videoUrls, settingData]);
   const fetcher = useFetcher();
-
+  console.log(videoUrls, "FUCKING URLSSS");
   const addProduct = async (url: string) => {
     const selected: any = await shopify.resourcePicker({
       type: "product",
@@ -81,7 +81,9 @@ const VideoCarousel = ({
     setItems(videoUrls);
     shopify.saveBar.hide("my-save-bar");
   };
-
+  if (fetcher.state === "loading") {
+    shopify.toast.show("Setting saved successfully");
+  }
   return (
     <Reorder.Group axis="x" values={items} onReorder={setItems}>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 ">
