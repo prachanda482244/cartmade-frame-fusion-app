@@ -25,7 +25,7 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
     jsonValue?.borderColor || "#ffffff",
   );
   const [turnOnBorder, setTurOnBorder] = useState(
-    jsonValue.turnOnBorder || false,
+    jsonValue?.turnOnBorder || false,
   );
   const [muteSound, setMuteSound] = useState(jsonValue.muteSound || false);
   const [addToCart, setAddToCart] = useState(jsonValue.addTocart || false);
