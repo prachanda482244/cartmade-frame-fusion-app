@@ -15,10 +15,10 @@ export const buttonsName: buttonsNameTypes[] = [
     name: "Button Design",
     component: ButtonDesign,
   },
-  {
-    index: 2,
-    link: "carouselDesign",
-    name: "Carousel Design",
-    component: CarouselDesign,
-  },
+  // {
+  //   index: 2,
+  //   link: "carouselDesign",
+  //   name: "Carousel Design",
+  //   component: CarouselDesign,
+  // },
 ];

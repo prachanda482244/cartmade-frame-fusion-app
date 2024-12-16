@@ -15,6 +15,7 @@ const InputColorPicker: React.FC<InputColorProps> = ({
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setState(event.target.value);
+    shopify.saveBar.show("setting-save-bar");
   };
 
   return (

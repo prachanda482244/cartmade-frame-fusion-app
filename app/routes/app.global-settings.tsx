@@ -13,34 +13,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     const source = formData.get("source");
     if (source === "ButtonDesign") {
-      const buttonText = formData.get("buttonText") as string;
-      const fontSize = formData.get("fontSize") as string;
-      const borderRadius = formData.get("borderRadius") as string;
       const borderWidth = formData.get("borderWidth") as string;
       const borderColor = formData.get("borderColor") as string;
-      const backgroundColor = formData.get("backgroundColor") as string;
-      const textColor = formData.get("textColor") as string;
-      const paddingX = formData.get("paddingX") as string;
-      const paddingY = formData.get("paddingY") as string;
-      const shadow = formData.get("shadow") as string;
-      const hotspotColor = formData.get("hotspotColor") as string;
-      const shadowColor = formData.get("shadowColor") as string;
+      const turnOnBorder = formData.get("turnOnBorder") as string;
+      const muteSound = formData.get("muteSound") as string;
+      const loopVideo = formData.get("loopVideo") as string;
+      const autoPlay = formData.get("autoPlay") as string;
+
+      const addToCart = formData.get("addToCart") as string;
+
       const metafieldData = {
         namespace: "cartmade",
-        key: "cod_button_settings",
+        key: "video_carousel_setting",
         value: JSON.stringify({
-          buttonText,
-          fontSize: parseInt(fontSize),
-          borderRadius: parseInt(borderRadius),
           borderWidth: parseInt(borderWidth),
-          paddingX: parseInt(paddingX),
-          paddingY: parseInt(paddingY),
-          shadow: parseInt(shadow),
-          shadowColor,
+          turnOnBorder: turnOnBorder === "true" ? true : false,
+          muteSound: muteSound === "true" ? true : false,
           borderColor,
-          hotspotColor,
-          backgroundColor,
-          textColor,
+          addToCart: addToCart === "true" ? true : false,
+          loopVideo: loopVideo === "true" ? true : false,
+          autoPlay: autoPlay === "true" ? true : false,
         }),
         type: "json",
         owner_resource: "shop",
@@ -142,18 +134,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 
   try {
-    const [buttonSettings, tooltipSettings] = await Promise.all([
-      fetchMetafield("cartmade", "cod_button_settings"),
-      fetchMetafield("cartmade", "cod_tooltip_settings"),
+    const [buttonSettings] = await Promise.all([
+      fetchMetafield("cartmade", "video_carousel_setting"),
     ]);
 
-    if (!buttonSettings && !tooltipSettings) {
+    if (!buttonSettings) {
       return { error: "No metafield data found." };
     }
 
     return {
       buttonSettings,
-      tooltipSettings,
     };
   } catch (error) {
     console.error("Error fetching metafields:", error);
@@ -162,7 +152,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const GlobalSettings = () => {
-  const [activeButton, setActiveButton] = useState<string>("app");
+  const [activeButton, setActiveButton] = useState<string>("buttonDesign");
   const loaderData = useLoaderData<any>();
   const handleButtonClick = useCallback(
     (link: string) => {
@@ -173,7 +163,6 @@ const GlobalSettings = () => {
   );
 
   const buttonSettings = loaderData?.buttonSettings || {};
-  const tooltipSettings = loaderData?.tooltipSettings || {};
 
   const ActiveComponent = buttonsName.find(
     ({ link }) => link === activeButton,
@@ -198,10 +187,7 @@ const GlobalSettings = () => {
       <div className="mt-6">
         {ActiveComponent && (
           <ActiveComponent
-            {...(activeButton === "buttonDesign" ||
-            activeButton === "tooltipDesign"
-              ? { buttonSettings, tooltipSettings }
-              : {})}
+            {...(activeButton === "buttonDesign" ? { buttonSettings } : {})}
           />
         )}
       </div>

@@ -11,276 +11,104 @@ import { apiVersion, authenticate } from "app/shopify.server";
 import fs from "fs";
 import path from "path";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { uploadVideo } from "app/utils/utils";
+import {
+  createGenericFile,
+  fetchGraphQLQuery,
+  getMetafield,
+  getReadyFileUrl,
+  getShopId,
+  parseFormData,
+  updateMetafield,
+  uploadVideo,
+} from "app/utils/utils";
 import VideoCarousel from "app/components/VideoCarousel";
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
   if (request.method === "POST" || request.method === "post") {
     const url = new URL(request.url);
-    const id = Number(url.pathname.split("/").pop());
-    const uploadHandler = unstable_createFileUploadHandler({
-      directory: path.join(process.cwd(), "public", "uploads"),
-      maxPartSize: 9_000_000,
-      file: ({ filename }) => filename,
-    });
-
-    const formData = await unstable_parseMultipartFormData(
-      request,
-      uploadHandler,
-    );
-
+    const metafieldId = `gid://shopify/Metafield/${url.pathname.split("/").pop()}`;
+    const formData = await parseFormData(request);
     const video = formData.get("video") as File;
+    if (!video) return;
     const videoPath = path.join(process.cwd(), "public/uploads", video.name);
     const videoBuffer = fs.readFileSync(videoPath);
-
     const resourceUrl = await uploadVideo(
       videoBuffer,
       shop,
       accessToken,
       apiVersion,
     );
-    console.log(resourceUrl, "resoururl");
-
     fs.unlink(videoPath, (err) => {
-      if (err) {
-        console.error("file deleted successfully");
-      }
+      if (err) console.error("Error deleting file:", err);
     });
-    const shopQuery = `
-    query {
-        shop {
-          id
-        }
-      }
-    `;
-    const shopData = await admin.graphql(shopQuery);
-    const shopResponse = await shopData.json();
-    const shopId = shopResponse.data.shop.id;
 
-    const metaFieldQuery = `
-    query GetMetafield($id: ID!) {
-  node(id: $id) {
-    ... on Metafield {
-      id
-      namespace
-      key
-      value
-      jsonValue
-      ownerType
-    }
-  }
-}
-`;
-    const response = await admin.graphql(metaFieldQuery, {
-      variables: {
-        id: `gid://shopify/Metafield/${id}`,
-      },
-    });
-    const metaFieldResponse = await response.json();
-    const namespace = metaFieldResponse.data.node.namespace;
-    const key = metaFieldResponse.data.node.key;
+    const genericFile = await createGenericFile(resourceUrl, admin);
+    const actualUrl = await getReadyFileUrl(admin, genericFile.id);
+    const shopId = await getShopId(admin);
+    const metafield = await getMetafield(admin, metafieldId);
 
-    const currentJsonValue = metaFieldResponse.data.node.jsonValue;
     const updatedData = {
-      ...currentJsonValue,
+      ...metafield.jsonValue,
       videoUrls: [
-        ...(currentJsonValue.videoUrls || []).filter((item: any) => item.url),
-        { url: resourceUrl, products: [] },
+        ...(metafield.jsonValue.videoUrls || []).filter(
+          (item: any) => item.url,
+        ),
+        { url: actualUrl, products: [] },
       ],
     };
-    const updateQuery = `
-       mutation UpdateShopMetafield($metafields: [MetafieldsSetInput!]!) {
-      metafieldsSet(metafields: $metafields) {
-        metafields {
-          id
-          namespace
-          key
-          value
-          type
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-    `;
 
-    const updateResponse = await admin.graphql(updateQuery, {
-      variables: {
-        metafields: [
-          {
-            ownerId: shopId,
-            namespace,
-            key,
-            value: JSON.stringify(updatedData),
-            type: "json",
-          },
-        ],
-      },
-    });
-
-    const metaDataresponse = await updateResponse.json();
-    const actualData = metaDataresponse.data.metafieldsSet.metafields;
-    console.log(actualData, "ACTUAL DATA");
-    return { data: actualData };
-
-    // const createFileQuery = `mutation fileCreate($files: [FileCreateInput!]!) {
-    //   fileCreate(files: $files) {
-    //     files {
-    //       alt
-    //        fileStatus
-    //       id
-    //     }
-    //     userErrors {
-    //       field
-    //       message
-    //     }
-    //   }
-    // }`;
-
-    // const createFileVariables = {
-    //   files: {
-    //     alt: "fallback for a video",
-    //     contentType: "VIDEO",
-    //     originalSource: resourceUrl,
-    //   },
-    // };
-    // const createFileQueryResult = await axios.post(
-    //   `https://${shop}/admin/api/${apiVersion}/graphql.json`,
-    //   {
-    //     query: createFileQuery,
-    //     variables: createFileVariables,
-    //   },
-    //   {
-    //     headers: {
-    //       "X-Shopify-Access-Token": `${accessToken}`,
-    //     },
-    //   },
-    // );
-
-    //   const fileIds = createFileQueryResult.data.data.fileCreate;
-    //   const GET_FILE_QUERY = `
-    //   query GetFilePreviews($ids: [ID!]!) {
-    //     nodes(ids: $ids) {
-    //       ... on File {
-    //         fileStatus
-    //         preview {
-    //         image {
-    //           url
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-    // `;
-    //   const response = await admin.graphql(GET_FILE_QUERY, {
-    //     variables: {
-    //       ids: fileIds,
-    //     },
-    //   });
-    //   const { data } = await response.json();
-    //   console.log(data, "Data recive");
+    return await updateMetafield(
+      admin,
+      shopId,
+      metafield.namespace,
+      metafield.key,
+      updatedData,
+    );
   }
   if (request.method === "PUT" || request.method === "put") {
     const url = new URL(request.url);
-    const id = Number(url.pathname.split("/").pop());
-
+    const metafieldId = `gid://shopify/Metafield/${url.pathname.split("/").pop()}`;
     const formData = await request.formData();
-
     const videoProducts = formData.get("videoProducts") as string;
-    const shopQuery = `
-    query {
-        shop {
-          id
-        }
-      }
-    `;
-    const shopData = await admin.graphql(shopQuery);
-    const shopResponse = await shopData.json();
-    const shopId = shopResponse.data.shop.id;
+    const shopId = await getShopId(admin);
     const incomingData = JSON.parse(videoProducts);
-    const metaFieldQuery = `
-    query GetMetafield($id: ID!) {
-  node(id: $id) {
-    ... on Metafield {
-      id
-      namespace
-      key
-      value
-      jsonValue
-      ownerType
-    }
-  }
-}
-`;
-    const response = await admin.graphql(metaFieldQuery, {
-      variables: {
-        id: `gid://shopify/Metafield/${id}`,
-      },
-    });
-
-    const metaFieldResponse = await response.json();
-
-    const namespace = metaFieldResponse.data.node.namespace;
-    const key = metaFieldResponse.data.node.key;
-
-    const currentJsonValue = metaFieldResponse.data.node.jsonValue;
-
+    const metafield = await getMetafield(admin, metafieldId);
+    const currentJsonValue = metafield.jsonValue;
     const updatedData = {
       ...currentJsonValue,
       videoUrls: incomingData,
     };
-    console.log(updatedData, "UPDATE DATA");
-    const updateQuery = `
-       mutation UpdateShopMetafield($metafields: [MetafieldsSetInput!]!) {
-      metafieldsSet(metafields: $metafields) {
-        metafields {
-          id
-          namespace
-          key
-          value
-          type
-        }
-        userErrors {
-          field
-          message
-        }
-      }
-    }
-    `;
-
-    const updateResponse = await admin.graphql(updateQuery, {
-      variables: {
-        metafields: [
-          {
-            ownerId: shopId,
-            namespace,
-            key,
-            value: JSON.stringify(updatedData),
-            type: "json",
-          },
-        ],
-      },
-    });
-    const metaDataresponse = await updateResponse.json();
-    console.log(metaDataresponse.data.metafieldsSet, "Metadata");
-    console.log(metaDataresponse.data.metafieldsSet.metafields, "metafields");
-    const actualData = metaDataresponse.data.metafieldsSet.metafields;
-    console.log(actualData);
-
-    return { data: actualData };
+    const updateMetafiled = await updateMetafield(
+      admin,
+      shopId,
+      metafield.namespace,
+      metafield.key,
+      updatedData,
+    );
+    return { data: updateMetafiled };
   }
 };
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
-  const id = url.pathname.split("/").pop();
-  const {
-    admin,
-    session: { shop },
-  } = await authenticate.admin(request);
-  const metafieldId = `gid://shopify/Metafield/${id}`;
+  const metafieldId = `gid://shopify/Metafield/${url.pathname.split("/").pop()}`;
+  const { admin } = await authenticate.admin(request);
+
+  const VideoSettingQuery = `
+      query GetMetafield {
+        shop {
+          metafield(namespace: "cartmade", key: "video_carousel_setting") {
+            id
+            key
+            jsonValue
+            type
+            updatedAt
+          }
+        }
+      }
+    `;
+
   const META_FIELD_QUERY = `
   query getMetafield($id: ID!) {
     node(id: $id) {
@@ -294,28 +122,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   }
 `;
-  const response = await admin.graphql(META_FIELD_QUERY, {
-    variables: {
-      id: metafieldId,
-    },
-  });
-  {
-    try {
-      const { data } = await response.json();
-      if (!data) {
-        console.warn("No  metafield found.");
-        return { error: "Data not found." };
-      }
-      if (data.node.jsonValue.videoUrls.length === 0) {
-        return {
-          videoUrls: [],
-        };
-      }
-      return { videoUrls: data.node.jsonValue.videoUrls };
-    } catch (error) {
-      console.error("Error fetching  metafields:", error);
-      return { error: "Unexpected error occurred while fetching metafield." };
-    }
+
+  try {
+    const [metafieldData, videoCarouselData] = await Promise.all([
+      fetchGraphQLQuery(admin, META_FIELD_QUERY, { id: metafieldId }),
+      fetchGraphQLQuery(admin, VideoSettingQuery),
+    ]);
+    const videoUrls = metafieldData.data.node.jsonValue.videoUrls || [];
+    const settingData = videoCarouselData.data.shop.metafield.jsonValue || {};
+
+    return {
+      videoUrls,
+      settingData,
+    };
+  } catch (error) {
+    console.error("Error fetching metafields:", error);
+    return { error: "Unexpected error occurred while fetching metafield." };
   }
 };
 
@@ -357,7 +179,8 @@ const VideoSettingPage = () => {
           title: "Upload Video",
           actions: [
             {
-              content: "Upload",
+              content: isLoading ? "Uploading..." : "Upload",
+              disabled: isLoading,
               onAction: () => fileInputRef.current?.click(),
             },
             { content: "Upload from url", onAction: onCreateNewView },
@@ -384,7 +207,7 @@ const VideoSettingPage = () => {
             onChange={handleChange}
             autoComplete="off"
             autoSize
-            placeholder="Carousel Title"
+            placeholder="Link/url of the video"
           />
         </p>
         <TitleBar title="Upload Url">
@@ -414,7 +237,11 @@ const VideoSettingPage = () => {
           </EmptyState>
         </LegacyCard>
       ) : (
-        <VideoCarousel videoUrls={loaderData.videoUrls} isLoading={isLoading} />
+        <VideoCarousel
+          videoUrls={loaderData.videoUrls}
+          settingData={loaderData.settingData}
+          isLoading={isLoading}
+        />
       )}
     </Page>
   );

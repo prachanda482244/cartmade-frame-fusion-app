@@ -12,13 +12,14 @@ import { useEffect, useState } from "react";
 import { DeleteIcon, XIcon } from "@shopify/polaris-icons";
 const VideoCarousel = ({
   videoUrls,
+  settingData,
   isLoading,
 }: {
   videoUrls: { url: string; products: any[] }[];
+  settingData: any;
   isLoading: boolean;
 }) => {
   const [items, setItems] = useState(videoUrls);
-
   useEffect(() => {
     setItems(videoUrls);
   }, [videoUrls]);
@@ -84,18 +85,18 @@ const VideoCarousel = ({
   return (
     <Reorder.Group axis="x" values={items} onReorder={setItems}>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 ">
-        {isLoading && (
+        {isLoading ? (
           <div className="absolute right-0 top-0">
             <Spinner size="small" />
           </div>
-        )}
+        ) : null}
         {items.map(({ url, products }) => (
           <Reorder.Item key={url} value={url}>
-            {/* <div className="overflow-hidden rounded-lg p-4 border border-gray-300 bg-white relative">
+            <div className="overflow-hidden rounded-lg p-4 border border-gray-300 bg-white relative">
               <video
                 controls
-                loop
-                muted
+                loop={settingData.loopVideo}
+                muted={settingData.muteSound}
                 autoPlay
                 className="w-full h-full object-cover rounded-t-lg"
               >
@@ -145,8 +146,8 @@ const VideoCarousel = ({
                   icon={DeleteIcon}
                 />
               </div>
-            </div> */}
-
+            </div>
+            {/* 
             <MediaCard
               portrait
               title={products.map((product) => product.title) || ""}
@@ -168,7 +169,7 @@ const VideoCarousel = ({
               >
                 <source src={url} type="video/mp4" />
               </video>
-            </MediaCard>
+            </MediaCard> */}
           </Reorder.Item>
         ))}
       </div>
