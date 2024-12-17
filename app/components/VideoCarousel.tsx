@@ -20,11 +20,12 @@ const VideoCarousel = ({
   isLoading: boolean;
 }) => {
   const [items, setItems] = useState(videoUrls);
+  console.log(items, "loaded on frist tyr");
+  const fetcher = useFetcher();
   useEffect(() => {
     setItems(videoUrls);
-  }, [videoUrls, settingData]);
-  const fetcher = useFetcher();
-  console.log(videoUrls, "FUCKING URLSSS");
+  }, [videoUrls]);
+
   const addProduct = async (url: string) => {
     const selected: any = await shopify.resourcePicker({
       type: "product",
@@ -76,7 +77,6 @@ const VideoCarousel = ({
     fetcher.submit(formData, { method: "PUT" });
     shopify.saveBar.hide("my-save-bar");
   };
-
   const handleDiscard = () => {
     setItems(videoUrls);
     shopify.saveBar.hide("my-save-bar");
@@ -86,7 +86,7 @@ const VideoCarousel = ({
   }
   return (
     <Reorder.Group axis="x" values={items} onReorder={setItems}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 ">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 relative">
         {isLoading ? (
           <div className="absolute right-0 top-0">
             <Spinner size="small" />

@@ -234,6 +234,31 @@ export async function updateMetafield(
 
   return (await response.json()).data.metafieldsSet.metafields;
 }
+export async function deleteGenericFiles(admin: any, deleteIds: string[]) {
+  const deleteQuery = `
+   mutation {
+      fileDelete(fileIds: ${JSON.stringify(deleteIds)}) {
+        deletedFileIds
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  const response = await admin.graphql(deleteQuery);
+
+  const result = await response.json();
+  if (result.data?.fileDelete?.userErrors?.length > 0) {
+    console.error(
+      "Errors occurred during file deletion:",
+      result.data.fileDelete.userErrors,
+    );
+    return result.fileDelete;
+  }
+  return result.data.fileDelete.deletedFileIds;
+}
 
 interface GraphQLResponse<T = any> {
   data: any;
@@ -253,4 +278,29 @@ export async function fetchGraphQLQuery<T>(
     console.error("Error fetching GraphQL query:", error);
     throw new Error("Error fetching GraphQL query");
   }
+}
+
+export async function getMultipleMetafields(
+  admin: any,
+  metafieldIds: string[],
+) {
+  const metaFieldQuery = `
+    query GetMultipleMetafields($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on Metafield {
+          id
+          namespace
+          key
+          jsonValue
+          ownerType
+        }
+      }
+    }
+  `;
+
+  const response = await admin.graphql(metaFieldQuery, {
+    variables: { ids: metafieldIds },
+  });
+
+  return (await response.json()).data.nodes;
 }

@@ -13,6 +13,7 @@ import path from "path";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createGenericFile,
+  deleteGenericFiles,
   fetchGraphQLQuery,
   getMetafield,
   getReadyFileUrl,
@@ -54,9 +55,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         ...(metafield.jsonValue.videoUrls || []).filter(
           (item: any) => item.url,
         ),
-        { url: actualUrl, products: [] },
+        { url: actualUrl, products: [], videoId: genericFile.id },
       ],
     };
+    console.log(updatedData, "UPDATED DATA");
 
     return await updateMetafield(
       admin,
@@ -74,6 +76,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const shopId = await getShopId(admin);
     const incomingData = JSON.parse(videoProducts);
     const metafield = await getMetafield(admin, metafieldId);
+    const ids = new Set(incomingData.map((item: any) => item.videoId));
+    const deletedId = metafield.jsonValue.videoUrls
+      .filter((item: any) => !ids.has(item.videoId))
+      .map((data: any) => data.videoId);
+    const deletedGenericFiles = await deleteGenericFiles(admin, deletedId);
     const currentJsonValue = metafield.jsonValue;
     const updatedData = {
       ...currentJsonValue,
@@ -162,6 +169,7 @@ const VideoSettingPage = () => {
     setUrl(newValue);
   }, []);
   const loaderData: any = useLoaderData();
+  console.log(loaderData, "loaderda+");
   const handleFileChange = () => {
     const file = fileInputRef.current?.files?.[0];
     if (file) {
@@ -175,9 +183,10 @@ const VideoSettingPage = () => {
       fileInputRef.current.value = "";
     }
   };
+  console.log(loaderData, "loaderdata");
   useEffect(() => {
     setIsLoading(false);
-  }, [fetcher.state === "loading"]);
+  }, [fetcher.state === "loading", loaderData]);
 
   if (fetcher.state === "loading") {
     shopify.toast.show("Setting saved successfully");
@@ -226,10 +235,7 @@ const VideoSettingPage = () => {
           <button variant="primary">Upload</button>
         </TitleBar>
       </Modal>
-      {!loaderData ||
-      !loaderData.videoUrls ||
-      loaderData.videoUrls?.length === 0 ||
-      loaderData.videoUrls[0].url === "" ? (
+      {loaderData.videoUrls[0]?.url === "" ? (
         <LegacyCard sectioned>
           <EmptyState
             heading="Manage your Carousel"

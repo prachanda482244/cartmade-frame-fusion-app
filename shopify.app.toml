@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "6584b623d2297c6e18d1d91c103bfe69"
-application_url = "https://modems-valuable-celebs-wagner.trycloudflare.com"
+application_url = "https://techno-cadillac-devel-show.trycloudflare.com"
 embedded = true
 name = "frame-fusion"
 handle = "frame-fusion"
@@ -19,9 +19,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://modems-valuable-celebs-wagner.trycloudflare.com/auth/callback",
-  "https://modems-valuable-celebs-wagner.trycloudflare.com/auth/shopify/callback",
-  "https://modems-valuable-celebs-wagner.trycloudflare.com/api/auth/callback"
+  "https://techno-cadillac-devel-show.trycloudflare.com/auth/callback",
+  "https://techno-cadillac-devel-show.trycloudflare.com/auth/shopify/callback",
+  "https://techno-cadillac-devel-show.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

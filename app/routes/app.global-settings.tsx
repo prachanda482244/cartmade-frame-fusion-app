@@ -19,9 +19,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const muteSound = formData.get("muteSound") as string;
       const loopVideo = formData.get("loopVideo") as string;
       const autoPlay = formData.get("autoPlay") as string;
-
+      const centerVideo = formData.get("centerVideo") as string;
       const addToCart = formData.get("addToCart") as string;
-
       const metafieldData = {
         namespace: "cartmade",
         key: "video_carousel_setting",
@@ -33,6 +32,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           addToCart: addToCart === "true" ? true : false,
           loopVideo: loopVideo === "true" ? true : false,
           autoPlay: autoPlay === "true" ? true : false,
+          centerVideo: centerVideo === "true" ? true : false,
         }),
         type: "json",
         owner_resource: "shop",

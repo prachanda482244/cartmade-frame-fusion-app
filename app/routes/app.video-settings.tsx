@@ -15,7 +15,14 @@ import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import { LoaderResponse } from "app/types/type";
-import { generateRandomString } from "app/utils/utils";
+import {
+  deleteGenericFiles,
+  generateRandomString,
+  getMetafield,
+  getMultipleMetafields,
+  getShopId,
+  updateMetafield,
+} from "app/utils/utils";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -70,10 +77,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { error: "No metafieldId provided" };
     }
     const idsArray = JSON.parse(metafieldIds);
+    console.log(idsArray, "array");
 
     if (!Array.isArray(idsArray) || idsArray.length === 0) {
       return { error: "Invalid metafieldIds provided" };
     }
+    const metaFields = await getMultipleMetafields(admin, idsArray);
+    const deleteIds = metaFields.flatMap(({ jsonValue }: any) =>
+      jsonValue?.videoUrls[0]?.videoId
+        ? jsonValue.videoUrls.flatMap(({ videoId }: any) => videoId)
+        : [],
+    );
+
+    if (deleteIds.length) await deleteGenericFiles(admin, deleteIds);
 
     const DELETE_META_FIELD = `
       mutation DeleteMetafield($id: ID!) {
@@ -86,9 +102,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       }
     `;
-    const deletePromises = idsArray.map((id) => {
-      //   const formattedId = `gid://shopify/Metafield/${id}`;
-
+    const deletePromises = idsArray.map((id: any) => {
       return admin.graphql(DELETE_META_FIELD, {
         variables: {
           id: id,
@@ -105,8 +119,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const data = await admin.graphql(query);
 
     if (!data) {
-      console.error("Failed to fetch PDF metafield");
-      return { error: "Failed to fetch PDF metafield." };
+      console.error("Failed to fetch  metafield");
+      return { error: "Failed to fetch  metafield." };
     }
     const response = await data.json();
     const pageInfo = response.data.shop.metafields.pageInfo;
@@ -128,7 +142,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     };
   }
   if (request.method === "PUT" || request.method === "put") {
-    return "edit";
+    const formData = await request.formData();
+    const metaFieldId = formData.get("metafieldId") as string;
+    const carouselTitle = formData.get("carousel-title") as string;
+    const shopId = await getShopId(admin);
+    const metafield = await getMetafield(admin, metaFieldId);
+    const currentJsonValue = metafield.jsonValue;
+    const updatedData = {
+      ...currentJsonValue,
+      title: carouselTitle,
+    };
+    const updateMetafiled = await updateMetafield(
+      admin,
+      shopId,
+      metafield.namespace,
+      metafield.key,
+      updatedData,
+    );
+
+    if (!updateMetafiled) {
+      return {
+        error: true,
+        message: "Failed to update metafield",
+      };
+    }
+    return {
+      success: true,
+      message: "Metafield updated successfully",
+    };
   }
   return {
     error: true,
@@ -196,6 +237,9 @@ const VideoSettingPage = () => {
     setTitle(newValue);
   }, []);
 
+  const handleEditChange = useCallback((newValue: string) => {
+    setEditTitle(newValue);
+  }, []);
   const handleSubmit = async () => {
     setAddLoading(true);
 
@@ -206,6 +250,16 @@ const VideoSettingPage = () => {
     shopify.modal.hide("add-carousel");
   };
 
+  const handleEditSubmit = async () => {
+    setAddLoading(true);
+    const formData = new FormData();
+
+    formData.append("carousel-title", editTitle);
+    formData.append("metafieldId", selectedResources[0]);
+    fetcher.submit(formData, { method: "PUT" });
+    setEditTitle("");
+    shopify.modal.hide("edit-carousel");
+  };
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
       setCopiedKey(key);
@@ -217,12 +271,12 @@ const VideoSettingPage = () => {
   };
 
   const editModal = () => {
-    shopify.modal.show("add-carousel");
+    shopify.modal.show("edit-carousel");
   };
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(videoMetafields);
   const rowMarkup = videoMetafields.map(
-    ({ id, key, jsonValue: { title, date } }: any, index) => (
+    ({ id, key, jsonValue: { title, date, videoUrls } }: any, index) => (
       <IndexTable.Row
         id={id}
         key={id}
@@ -238,7 +292,8 @@ const VideoSettingPage = () => {
             }
             className="hover:underline"
           >
-            {title || "Title"}
+            {`${title} (${videoUrls && videoUrls[0]?.url !== "" ? videoUrls.length : 0} video)` ||
+              "Title"}
           </span>
         </IndexTable.Cell>
         <IndexTable.Cell>{date}</IndexTable.Cell>
@@ -256,6 +311,7 @@ const VideoSettingPage = () => {
       </IndexTable.Row>
     ),
   );
+
   const resourceName = {
     singular: "order",
     plural: "orders",
@@ -357,7 +413,7 @@ const VideoSettingPage = () => {
           <TextField
             label=""
             labelHidden
-            value={selectedResources.length ? editTitle : title}
+            value={title}
             onChange={handleChange}
             autoComplete="off"
             autoSize
@@ -365,12 +421,39 @@ const VideoSettingPage = () => {
           />
         </p>
 
-        <TitleBar title="Add carousel">
+        <TitleBar title={"Add carousel"}>
           <button onClick={() => shopify.modal.hide("add-carousel")}>
             Cancel
           </button>
           <button variant="primary" onClick={handleSubmit}>
             Add
+          </button>
+        </TitleBar>
+      </Modal>
+
+      <Modal id="edit-carousel">
+        <p className="py-3 px-4">
+          <TextField
+            label=""
+            labelHidden
+            value={editTitle}
+            onChange={handleEditChange}
+            autoComplete="off"
+            autoSize
+            placeholder="Edit Title"
+          />
+        </p>
+
+        <TitleBar title="Edit carousel">
+          <button onClick={() => shopify.modal.hide("edit-carousel")}>
+            Cancel
+          </button>
+          <button
+            disabled={editTitle === ""}
+            variant="primary"
+            onClick={handleEditSubmit}
+          >
+            Edit
           </button>
         </TitleBar>
       </Modal>
