@@ -6,7 +6,13 @@ import {
 } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { Modal, TitleBar } from "@shopify/app-bridge-react";
-import { EmptyState, LegacyCard, Page, TextField } from "@shopify/polaris";
+import {
+  EmptyState,
+  LegacyCard,
+  Page,
+  Select,
+  TextField,
+} from "@shopify/polaris";
 import { apiVersion, authenticate } from "app/shopify.server";
 import fs from "fs";
 import path from "path";
@@ -23,6 +29,11 @@ import {
   uploadVideo,
 } from "app/utils/utils";
 import VideoCarousel from "app/components/VideoCarousel";
+import {
+  InstagramEmbed,
+  TikTokEmbed,
+  YouTubeEmbed,
+} from "react-social-media-embed";
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
@@ -80,7 +91,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const deletedId = metafield.jsonValue.videoUrls
       .filter((item: any) => !ids.has(item.videoId))
       .map((data: any) => data.videoId);
-    const deletedGenericFiles = await deleteGenericFiles(admin, deletedId);
+    await deleteGenericFiles(admin, deletedId);
     const currentJsonValue = metafield.jsonValue;
     const updatedData = {
       ...currentJsonValue,
@@ -191,6 +202,13 @@ const VideoSettingPage = () => {
   if (fetcher.state === "loading") {
     shopify.toast.show("Setting saved successfully");
   }
+  const [embeddedLinkSelected, setEmbeddedLinkSelected] = useState("youtube");
+
+  const handleSelectChange = useCallback(
+    (value: string) => setEmbeddedLinkSelected(value),
+    [],
+  );
+
   return (
     <Page
       backAction={{ content: "Settings", url: "/app/video-settings" }}
@@ -219,7 +237,26 @@ const VideoSettingPage = () => {
       />
 
       <Modal id="url">
-        <p className="py-3 px-4">
+        <p className="py-2 px-2 flex flex-col gap-2">
+          <Select
+            label="Embedded link"
+            options={[
+              {
+                label: "Youtube",
+                value: "youtube",
+              },
+              {
+                label: "Tiktok",
+                value: "tiktok",
+              },
+              {
+                label: "Instagram",
+                value: "instagram33",
+              },
+            ]}
+            onChange={handleSelectChange}
+            value={embeddedLinkSelected}
+          />
           <TextField
             label=""
             labelHidden
@@ -227,7 +264,7 @@ const VideoSettingPage = () => {
             onChange={handleChange}
             autoComplete="off"
             autoSize
-            placeholder="Link/url of the video"
+            placeholder={`link of the ${embeddedLinkSelected}`}
           />
         </p>
         <TitleBar title="Upload Url">
@@ -255,11 +292,26 @@ const VideoSettingPage = () => {
           </EmptyState>
         </LegacyCard>
       ) : (
-        <VideoCarousel
-          videoUrls={loaderData.videoUrls}
-          settingData={loaderData.settingData}
-          isLoading={isLoading}
-        />
+        <>
+          <VideoCarousel
+            videoUrls={loaderData.videoUrls}
+            settingData={loaderData.settingData}
+            isLoading={isLoading}
+          />
+          <div className="flex items-center mt-2 gap-2">
+            <YouTubeEmbed
+              url="https://www.youtube.com/embed/6Yc18RXjuz0"
+              width="360"
+              height="415"
+            />
+
+            <TikTokEmbed
+              url="https://www.tiktok.com/@codes214/video/7302116808692157702?q=progrramming&t=1734436923394"
+              width={325}
+            />
+            <InstagramEmbed url="https://www.instagram.com/reel/C8wnTqItqwA/?igsh=YzljYTk1ODg3Zg%3D%3D" />
+          </div>
+        </>
       )}
     </Page>
   );
