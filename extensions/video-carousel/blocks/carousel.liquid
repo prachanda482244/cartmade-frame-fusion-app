@@ -1,0 +1,303 @@
+{{ 'https://cdn.tailwindcss.com' | script_tag }}
+{{ 'video-carousel.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'carousel.js' | asset_url}}" defer="defer"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+  crossorigin="anonymous"></script>
+{%- style -%}
+.section--{{section.id}}-padding {
+padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+}
+
+@media screen and (min-width: 750px) {
+.section--{{section.id}}-padding {
+padding-top: {{ section.settings.padding_top }}px;
+padding-bottom: {{ section.settings.padding_bottom }}px;
+}
+}
+{%- endstyle -%}
+
+
+{{ 'main.css' | asset_url | stylesheet_tag }}
+{% assign videoCarouselMetafields = shop.metafields.carousel-title %}
+{% assign videoCarouselTitle = videoCarouselMetafields[block.settings.metafield_key] %}
+{% assign videoCarouselSettings = shop.metafields.cartmade['video_carousel_setting'] %}
+
+{% assign videoCarouselData = videoCarouselTitle.value %}
+{% assign videoCarouselSettingData = videoCarouselSettings.value %}
+{% assign videoCarouselInfo = videoCarouselData.videoUrls %}
+{{videoCarouselInfo}}
+{% for data in videoCarouselInfo %}
+<br>
+inside loop{{data}}
+<br>
+
+{% for productData in data.products %}
+hello wortld 2
+{{productData}}
+{% assign shopify_product = collections.all.products | where: "handle", productData.handle | first %}
+{{shopify_product}}
+{%endfor %}
+{%endfor %}
+<h1>Hello worldd</h1>
+
+{{section.id}}
+
+<section class="section--{{section.id}}-padding">
+  <div class='page-width'>
+    <div class="video-section-inner">
+      <div class="video-carousel-main-wrapper swiper swiper-container">
+        <div class="video-carousel-inner-wrapper swiper-wrapper ">
+          {% for data in videoCarouselInfo %}
+          {% for productData in data.products %}
+          {% assign shopify_product = collections.all.products | where: "handle", productData.handle | first %}
+          <div class="video-carousle-slides swiper-slide">
+            <div class="video-carousel-video-wrapper" style="
+                {% if videoCarouselSettingData.turnOnBorder %}
+                 {% if videoCarouselSettingData.borderWidth and videoCarouselSettingData.borderColor %}
+                   border: {{ videoCarouselSettingData.borderWidth }}px solid {{ videoCarouselSettingData.borderColor }};
+                 {% endif %}
+                {% endif %}
+              ">
+              <video width="100%" height="100%" class="swiper-video" {% if videoCarouselSettingData.autoPlay %} autoplay
+                {% endif %} {% if videoCarouselSettingData.loopVideo %} loop {% endif %} {% if
+                videoCarouselSettingData.muteSound %} muted {% endif %}>
+                <source src={{ data.url}} type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+
+              <div class="video-custom-muteicon mute-toggle hidden" id="mute-toggle">
+                <!-- Default muted icon -->
+                <span class="muted-icon" id="muted-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" height="20px" width="20px">
+                    <!--!Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                    <path
+                      d="M301.1 34.8C312.6 40 320 51.4 320 64l0 384c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352 64 352c-35.3 0-64-28.7-64-64l0-64c0-35.3 28.7-64 64-64l67.8 0L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z" />
+                  </svg>
+                </span>
+                <span class="unmuted-icon hidden" id="unmuted-icon">
+                  <!-- Sound enabled icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" height="20px" width="20px">
+                    <!--!Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                    <path
+                      d="M301.1 34.8C312.6 40 320 51.4 320 64l0 384c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352 64 352c-35.3 0-64-28.7-64-64l0-64c0-35.3 28.7-64 64-64l67.8 0L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM412.6 181.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5z" />
+                  </svg>
+                </span>
+              </div>
+              <!-- variant pickers -->
+              <div class="variant-picker-addtocart variant-picker-opentoggle">
+                {% assign variant_length = shopify_product.variants.size %}
+                {% assign variant_id = shopify_product.variants.first.id %}
+                {% if variant_length > 1 %}
+                <div class="product-variant-picker">
+                  {% render 'swatch', variant_product: shopify_product %}
+                </div>
+                {% else %}
+                <div class="product-add-to-cart">
+                  <button class="button product-add-to-cart" data-product-id="{{variant_id}}">Add to Cart</button>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="video-carousel-product-info">
+              <div class="video-carousel-product-info-inner">
+                {% if section.settings.show_product_image %}
+                <div class="product-info-image">
+                  <img src="{{ shopify_product.featured_image | img_url: 'large' }}" alt="{{ shopify_product.title }}">
+                </div>
+                {% endif %}
+                <div class="product-info-details">
+                  {% if section.settings.show_product_title %}
+                  {% if shopify_product.title != blank %}
+                  <div class="product-title">
+                    <h2>{{ shopify_product.title }}</h2>
+                  </div>
+                  {% endif %}
+                  {% endif %}
+                  {% if section.settings.show_product_price %}
+                  <div class="product-prices">
+                    {% if shopify_product.price.compare_at_price != blank %}
+                    <p class="product-compare-at-price">{{ shopify_product.price.compare_at_price | money }}</p>
+                    {% endif %}
+                    {% if shopify_product.price != blank %}
+                    <p class="product-price">{{ shopify_product.price | money }}</p>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+                <div class="product-info-main-icons">
+                  <div class="slide-content-plus-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 20px; height: 20px;">
+                      <!--!Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                      <path
+                        d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
+                    </svg>
+                  </div>
+                  <div class="slide-content-minus-icon ">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 20px; height: 20px;">
+                      <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
+                      <path
+                        d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM184 232l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- If we need navigation buttons -->
+      <div class="swiper-button-prev">
+        <svg width="45" height="46" viewBox="0 0 45 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24.375 17.375L18.75 23L24.375 28.625" stroke="black" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path
+            d="M39.375 23C39.375 25.2161 38.9385 27.4104 38.0905 29.4578C37.2424 31.5052 35.9994 33.3654 34.4324 34.9324C32.8654 36.4994 31.0052 37.7424 28.9578 38.5905C26.9104 39.4385 24.7161 39.875 22.5 39.875C20.2839 39.875 18.0896 39.4385 16.0422 38.5905C13.9948 37.7424 12.1346 36.4994 10.5676 34.9324C9.00059 33.3654 7.75758 31.5052 6.90953 29.4578C6.06148 27.4104 5.625 25.2161 5.625 23C5.625 18.5245 7.4029 14.2322 10.5676 11.0676C13.7323 7.9029 18.0245 6.125 22.5 6.125C26.9755 6.125 31.2678 7.9029 34.4324 11.0676C37.5971 14.2322 39.375 18.5245 39.375 23Z"
+            stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="swiper-button-next">
+        <svg width="45" height="46" viewBox="0 0 45 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.625 17.375L26.25 23L20.625 28.625" stroke="black" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+          <path
+            d="M5.625 23C5.625 25.2161 6.06148 27.4104 6.90953 29.4578C7.75758 31.5052 9.00058 33.3654 10.5676 34.9324C12.1346 36.4994 13.9948 37.7424 16.0422 38.5905C18.0896 39.4385 20.2839 39.875 22.5 39.875C24.7161 39.875 26.9104 39.4385 28.9578 38.5905C31.0052 37.7424 32.8654 36.4994 34.4324 34.9324C35.9994 33.3654 37.2424 31.5052 38.0905 29.4578C38.9385 27.4104 39.375 25.2161 39.375 23C39.375 18.5245 37.5971 14.2322 34.4324 11.0676C31.2677 7.9029 26.9755 6.125 22.5 6.125C18.0245 6.125 13.7322 7.9029 10.5676 11.0676C7.4029 14.2322 5.625 18.5245 5.625 23Z"
+            stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<script>
+  $(document).ready(function () {
+    var $swiper = $(".swiper-container");
+    var $bottomSlide = null;
+    var $bottomSlideContent = null;
+    var mySwiper = new Swiper(".swiper-container", {
+      spaceBetween: 1,
+      slidesPerView: 2,
+      centeredSlides: true,
+      loop: true,
+
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev"
+      },
+      on: {
+        slideChange: function () {
+          console.log('Slide changed');
+          updateMiddleSlide();
+        },
+      },
+      breakpoints: {
+        640: {
+          slidesPerView: 2,
+        },
+        768: {
+          slidesPerView: 3,
+        },
+        1024: {
+          slidesPerView: 5,
+        },
+      },
+    });
+    function updateMiddleSlide() {
+      const activeIndex = $swiper.activeIndex;
+      const slides = $swiper.slides;
+      console.log('checking slides and active index', activeIndex, slides)
+
+    }
+    updateMiddleSlide();
+  });
+</script>
+{% schema %}
+{
+"name": "App video carousel",
+"class": "section",
+"target": "section",
+"settings": [
+{
+"type": "text",
+"id": "metafield_key",
+"label": "Carousel KEY",
+"default": "Carousel KEY"
+},
+{
+"type": "header",
+"content": "section padding"
+},
+{
+"type": "range",
+"id": "padding_top",
+"min": 0,
+"max": 100,
+"step": 4,
+"unit": "px",
+"label": "padding top",
+"default": 36
+},
+{
+"type": "range",
+"id": "padding_bottom",
+"min": 0,
+"max": 100,
+"step": 4,
+"unit": "px",
+"label": "padding bottom",
+"default": 36
+},
+{
+"type": "checkbox",
+"id": "autplay_middle_video",
+"label": "Autoplay the centerd video only ",
+"default": true
+},
+{
+"type": "checkbox",
+"id": "show_product_title",
+"default": true,
+"label": "Show product title"
+},
+{
+"type": "checkbox",
+"id": "show_product_price",
+"default": true,
+"label": "Show product price"
+},
+{
+"type": "checkbox",
+"id": "show_product_image",
+"default": true,
+"label": "Show product image"
+},
+{
+"type": "range",
+"id": "columns_desktop_brands",
+"min": 1,
+"max": 5,
+"step": 1,
+"default": 4,
+"label": "No of columns on desktop"
+
+},
+{
+"type": "range",
+"id": "columns_mobile_brands",
+"min": 1,
+"max": 5,
+"step": 1,
+"default": 2,
+"label": "No of columns on mobile"
+}
+]
+
+}
+{% endschema %}

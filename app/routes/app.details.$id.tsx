@@ -1,9 +1,6 @@
-import {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  unstable_createFileUploadHandler,
-  unstable_parseMultipartFormData,
-} from "@remix-run/node";
+import * as tiktokscraper from "tiktok-scraper-ts";
+
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import {
@@ -34,6 +31,7 @@ import {
   TikTokEmbed,
   YouTubeEmbed,
 } from "react-social-media-embed";
+import ytdl from "ytdl-core";
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
@@ -106,6 +104,83 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     return { data: updateMetafiled };
   }
+  if (request.method === "PATCH") {
+    const formData = await request.formData();
+    const platFormName = formData.get("platFormName") as string;
+    const platFormUrl = formData.get("platFormUrl") as string;
+    console.log(`Platform: ${platFormName}, URL: ${platFormUrl}`);
+
+    if (!platFormUrl) {
+      return { error: "No URL provided" };
+    }
+
+    try {
+      let videoUrl = "";
+      let videoTitle = "downloaded_video";
+
+      if (
+        platFormName.toLowerCase() === "youtube" &&
+        platFormUrl.includes("youtube.com")
+      ) {
+        if (!ytdl.validateURL(videoUrl)) {
+          return { error: "Invalid YouTube URL" };
+        }
+        const videoInfo = await ytdl.getInfo(videoUrl);
+        const videoTitle = videoInfo.videoDetails.title.replace(
+          /[^a-zA-Z0-9]/g,
+          "_",
+        );
+
+        const outputPath = path.resolve(`./downloads/${videoTitle}.mp4`);
+
+        await new Promise((resolve, reject) => {
+          ytdl(videoUrl, { quality: "highest" })
+            .pipe(fs.createWriteStream(outputPath))
+            .on("finish", resolve)
+            .on("error", reject);
+        });
+
+        return { message: "video donwloaaed" };
+        // const info = await ytdl.getBasicInfo(platFormUrl);
+        // // videoTitle = info.videoDetails.title.replace(/[\/:*?"<>|]/g, "");
+        // videoUrl = info.formats[0].url;
+      } else if (platFormName.toLowerCase() === "tiktok") {
+        const video = await tiktokscraper.fetchVideo(platFormUrl, true);
+        console.log(video, "url video");
+        // videoUrl = video;
+      } else if (platFormName.toLowerCase() === "instagram") {
+        console.log("Instagram download logic not implemented");
+        return { error: "Instagram download not implemented" };
+      }
+      if (videoUrl) {
+        const outputPath = path.resolve(`./downloads/${videoTitle}.mp4`);
+
+        await new Promise((resolve, reject) => {
+          ytdl(videoUrl, { quality: "highest" })
+            .pipe(fs.createWriteStream(outputPath))
+            .on("finish", resolve)
+            .on("error", reject);
+        });
+
+        // const videoPath = path.join(process.cwd(), "public", "downloads");
+        // console.log(videoPath, "path of the video");
+        // const writeStream = fs.createWriteStream(videoPath);
+        // const videoStream = ytdl(videoUrl);
+
+        // videoStream.pipe(writeStream);
+
+        return {
+          message: `Video downloaded successfully from ${platFormName}`,
+          videoUrl,
+        };
+      }
+    } catch (error) {
+      console.error("Error downloading video:", error);
+      return { error: "Failed to download video" };
+    }
+  }
+
+  return { error: "Invalid request method" };
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -209,6 +284,12 @@ const VideoSettingPage = () => {
     [],
   );
 
+  const handleUploadUrl = async () => {
+    const formData = new FormData();
+    formData.append("platFormName", embeddedLinkSelected);
+    formData.append("platFormUrl", url);
+    fetcher.submit(formData, { method: "PATCH" });
+  };
   return (
     <Page
       backAction={{ content: "Settings", url: "/app/video-settings" }}
@@ -251,7 +332,7 @@ const VideoSettingPage = () => {
               },
               {
                 label: "Instagram",
-                value: "instagram33",
+                value: "instagram",
               },
             ]}
             onChange={handleSelectChange}
@@ -269,7 +350,9 @@ const VideoSettingPage = () => {
         </p>
         <TitleBar title="Upload Url">
           <button onClick={() => shopify.modal.hide("url")}>Cancel</button>
-          <button variant="primary">Upload</button>
+          <button onClick={handleUploadUrl} variant="primary">
+            Upload
+          </button>
         </TitleBar>
       </Modal>
       {loaderData.videoUrls[0]?.url === "" ? (
@@ -292,26 +375,11 @@ const VideoSettingPage = () => {
           </EmptyState>
         </LegacyCard>
       ) : (
-        <>
-          <VideoCarousel
-            videoUrls={loaderData.videoUrls}
-            settingData={loaderData.settingData}
-            isLoading={isLoading}
-          />
-          <div className="flex items-center mt-2 gap-2">
-            <YouTubeEmbed
-              url="https://www.youtube.com/embed/6Yc18RXjuz0"
-              width="360"
-              height="415"
-            />
-
-            <TikTokEmbed
-              url="https://www.tiktok.com/@codes214/video/7302116808692157702?q=progrramming&t=1734436923394"
-              width={325}
-            />
-            <InstagramEmbed url="https://www.instagram.com/reel/C8wnTqItqwA/?igsh=YzljYTk1ODg3Zg%3D%3D" />
-          </div>
-        </>
+        <VideoCarousel
+          videoUrls={loaderData.videoUrls}
+          settingData={loaderData.settingData}
+          isLoading={isLoading}
+        />
       )}
     </Page>
   );

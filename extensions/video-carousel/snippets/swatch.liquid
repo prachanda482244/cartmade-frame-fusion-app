@@ -1,0 +1,50 @@
+<style>
+    .option-btn.out-of-stock {
+        background-color: #d1c7c7;
+        /* Example: blue background */
+        color: white;
+        /* Example: white text color */
+        border: 1px solid #0056b3;
+        /* Example: darker border */
+        font-weight: bold;
+        /* Example: bold text */
+        /* Add more styles as needed */
+    }
+
+    .option-btn.active {
+        background-color: #45c469;
+        /* Example: blue background */
+        color: white;
+        /* Example: white text color */
+        border: 1px solid #0056b3;
+        /* Example: darker border */
+        font-weight: bold;
+        /* Example: bold text */
+        /* Add more styles as needed */
+    }
+</style>
+<div>
+    {% if variant_product %}
+    {% for variant in variant_product.variants %}
+    <div class="variant" data-id="{{ variant.id }}" data-title="{{ variant.title }}"
+        data-option1="{{ variant.option1 }}" data-option2="{{ variant.option2 }}" data-option3="{{ variant.option3 }}"
+        data-available="{{variant.available }}"></div>
+    {% endfor %}
+    <div id="options">
+        {% for option in variant_product.options_with_values %}
+        <div class="option-group" data-option-group="{{ option.name }}">
+            <label class="option-label not-selected" data-option-name="{{ option.name }}"
+                for="option-{{ option.name | handleize }}">
+                {{- option.name -}}
+            </label>
+            {% for val in option.values %}
+            <button class="option-btn" data-name="{{ val.name }}" data-option-name="{{ option.name }}">
+                {{ val.name }}
+            </button>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <button class="button variant-add-to-cart" disabled data-variant-id="">Add to Cart</button>
+    </div>
+    {% endif %}
+</div>
