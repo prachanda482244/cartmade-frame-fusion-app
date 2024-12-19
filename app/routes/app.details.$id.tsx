@@ -146,7 +146,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // videoUrl = info.formats[0].url;
       } else if (platFormName.toLowerCase() === "tiktok") {
         const video = await tiktokscraper.fetchVideo(platFormUrl, true);
-        console.log(video, "url video");
         // videoUrl = video;
       } else if (platFormName.toLowerCase() === "instagram") {
         console.log("Instagram download logic not implemented");
@@ -255,7 +254,6 @@ const VideoSettingPage = () => {
     setUrl(newValue);
   }, []);
   const loaderData: any = useLoaderData();
-  console.log(loaderData, "loaderda+");
   const handleFileChange = () => {
     const file = fileInputRef.current?.files?.[0];
     if (file) {
@@ -269,7 +267,6 @@ const VideoSettingPage = () => {
       fileInputRef.current.value = "";
     }
   };
-  console.log(loaderData, "loaderdata");
   useEffect(() => {
     setIsLoading(false);
   }, [fetcher.state === "loading", loaderData]);
@@ -284,28 +281,35 @@ const VideoSettingPage = () => {
     [],
   );
 
-  const handleUploadUrl = async () => {
-    const formData = new FormData();
-    formData.append("platFormName", embeddedLinkSelected);
-    formData.append("platFormUrl", url);
-    fetcher.submit(formData, { method: "PATCH" });
-  };
+  // Download the youtube and insta video and upload on shopify - remanining
+
+  // const handleUploadUrl = async () => {
+  //   const formData = new FormData();
+  //   formData.append("platFormName", embeddedLinkSelected);
+  //   formData.append("platFormUrl", url);
+  //   fetcher.submit(formData, { method: "PATCH" });
+  // };
   return (
     <Page
       backAction={{ content: "Settings", url: "/app/video-settings" }}
-      actionGroups={[
-        {
-          title: "Upload Video",
-          actions: [
-            {
-              content: isLoading ? "Uploading..." : "Upload",
-              disabled: isLoading,
-              onAction: () => fileInputRef.current?.click(),
-            },
-            { content: "Upload from url", onAction: onCreateNewView },
-          ],
-        },
-      ]}
+      // actionGroups={[
+      //   {
+      //     title: "Upload Video",
+      //     actions: [
+      //       {
+      //         content: isLoading ? "Uploading..." : "Upload",
+      //         disabled: isLoading,
+      //         onAction: () => fileInputRef.current?.click(),
+      //       },
+      //       { content: "Upload from url", onAction: onCreateNewView },
+      //     ],
+      //   },
+      // ]}
+      primaryAction={{
+        content: isLoading ? "Uploading..." : "Upload",
+        disabled: isLoading,
+        onAction: () => fileInputRef.current?.click(),
+      }}
       title="Video"
     >
       <input
@@ -317,6 +321,7 @@ const VideoSettingPage = () => {
         name="video"
       />
 
+      {/*
       <Modal id="url">
         <p className="py-2 px-2 flex flex-col gap-2">
           <Select
@@ -355,7 +360,9 @@ const VideoSettingPage = () => {
           </button>
         </TitleBar>
       </Modal>
-      {loaderData.videoUrls[0]?.url === "" ? (
+      */}
+
+      {loaderData.videoUrls[0]?.url === "" || !loaderData.videoUrls.length ? (
         <LegacyCard sectioned>
           <EmptyState
             heading="Manage your Carousel"

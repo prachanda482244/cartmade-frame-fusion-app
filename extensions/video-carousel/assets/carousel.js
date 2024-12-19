@@ -1,5 +1,20 @@
-console.log("js ready");
 $(document).ready(function () {
+  toastr.options = {
+    closeButton: true,
+    newestOnTop: false,
+    progressBar: true,
+    positionClass: "toast-top-right",
+    preventDuplicates: false,
+    onclick: null,
+    showDuration: "300",
+    hideDuration: "1000",
+    timeOut: "5000",
+    extendedTimeOut: "1000",
+    showEasing: "swing",
+    hideEasing: "linear",
+    showMethod: "fadeIn",
+    hideMethod: "fadeOut",
+  };
   $(".video-carousle-slides").each(function () {
     const slide = $(this);
     // Ensure initial state on page load
@@ -10,19 +25,27 @@ $(document).ready(function () {
 
     $(slide)
       .find(".slide-content-plus-icon")
-      .click(() => {
-        const variantSelect = $(slide).find(".variant-picker-addtocart");
-        const plusIcon = $(slide).find(".slide-content-plus-icon");
-        const minusIcon = $(slide).find(".slide-content-minus-icon");
-
-        if (variantSelect.hasClass("variant-picker-opentoggle")) {
-          variantSelect.removeClass("variant-picker-opentoggle");
-          plusIcon.hide();
-          minusIcon.show();
+      .click(function (e) {
+        const multiplevariant = $(this).attr("data-multiple-variant");
+        if (multiplevariant === "false") {
+          const product_selected_variant_id = $(this).attr(
+            "data_single_variant_id",
+          );
+          addToCart(product_selected_variant_id);
         } else {
-          variantSelect.addClass("variant-picker-opentoggle");
-          plusIcon.show();
-          minusIcon.hide();
+          const variantSelect = $(slide).find(".variant-picker-addtocart");
+          const plusIcon = $(slide).find(".slide-content-plus-icon");
+          const minusIcon = $(slide).find(".slide-content-minus-icon");
+
+          if (variantSelect.hasClass("variant-picker-opentoggle")) {
+            variantSelect.removeClass("variant-picker-opentoggle");
+            plusIcon.hide();
+            minusIcon.show();
+          } else {
+            variantSelect.addClass("variant-picker-opentoggle");
+            plusIcon.show();
+            minusIcon.hide();
+          }
         }
       });
 
@@ -64,22 +87,17 @@ $(document).ready(function () {
     });
 
     $(slide)
-      .find(".product-add-to-cart")
+      .find(".variant-add-to-cart")
       .each(function () {
         const button = this;
-        button.addEventListener("click", function () {
+        button.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
           const variantId = button.getAttribute("data-variant-id");
           const productId = button.getAttribute("data-product-id");
-          console.log(
-            "checking variant id or product id",
-            variantId,
-            productId,
-          );
-          const idToUse = variantId ? variantId : productId;
-          console.log("id to use is", idToUse);
 
-          if (idToUse) {
-            addToCart(idToUse);
+          if (variantId) {
+            addToCart(variantId);
           } else {
             console.error("No valid ID found for this product.");
           }
@@ -88,38 +106,57 @@ $(document).ready(function () {
 
     function addToCart(id) {
       const cartdrawer = document.querySelector("cart-drawer");
-      console.log("checking add ot cart id herer", id);
       const items = {
         quantity: 1,
         id: id,
       };
 
-      console.log("items to add cart", items);
       $.ajax({
         type: "POST",
         url: "/cart/add.js",
         data: items,
         dataType: "json",
-        success: function (data) {
-          console.log("Item successfully added to the cart");
-          const cart_notification = $("#cart-notification");
-          if (cart_notification) {
-            $("#cart-notification").addClass("active");
-          }
+        success: function (cartItem) {
+          fetch("/?section_id=header")
+            .then((response) => response.text())
+            .then((html) => {
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = html;
+              const updatedLink = tempDiv.querySelector("a[href='/cart']");
+
+              if (updatedLink) {
+                const existingLink = document.querySelector("a[href='/cart']");
+
+                if (existingLink) {
+                  existingLink.replaceWith(updatedLink);
+                } else {
+                  console.error(
+                    "Existing <a> tag with href='/cart' not found.",
+                  );
+                }
+              } else {
+                console.error(
+                  "Updated <a> tag with href='/cart' not found in fetched HTML.",
+                );
+              }
+            })
+            .catch((error) => console.error("Error fetching section:", error));
+          toastr.success("Added to cart");
         },
         error: function (err) {
-          console.error("Error adding item to the cart:", err);
+          toastr.error(
+            err.responseJSON?.message ||
+              err.responseJSON.description ||
+              "Error while adding to the cart",
+          );
         },
       });
     }
 
     let selectedValues = {};
     let recentlySelectedValue = {};
-    let previouslySelectedValue = {};
     let selectedVariantId = "";
     function updateOptions(slide) {
-      console.log("checking slide names", slide);
-
       function getGroupsFromDOM(slide) {
         const groups = {};
         slide.querySelectorAll(".option-btn").forEach((button) => {
@@ -137,7 +174,6 @@ $(document).ready(function () {
       }
 
       const groups = getGroupsFromDOM(slide);
-      console.log("created group list are", groups);
       const variants = $(".variant")
         .toArray()
         .map((el) => ({
@@ -151,15 +187,9 @@ $(document).ready(function () {
         recentlySelectedValue,
         selectedValues,
       );
-      console.log(
-        "combination checking of selected Value",
-        secondaryCombination,
-      );
-
       // Continue with the function to update button states
       updateButtonStates(secondaryCombination, variants, slide);
       const activeSelection = getActiveSelection(slide);
-      console.log("checking active selections", activeSelection);
       const activeselectedVariant = variants.find(
         (variant) => variant.title == activeSelection,
       );
@@ -169,10 +199,6 @@ $(document).ready(function () {
 
       if (activeselectedVariant) {
         selectedVariantId = activeselectedVariant.id;
-        console.log(
-          "final actively selected variant is here",
-          selectedVariantId,
-        );
         $(slide)
           .find(".variant-add-to-cart")
           .attr("disabled", false)
@@ -250,8 +276,11 @@ $(document).ready(function () {
       }
 
       const availabilityMap = {};
+      console.log(resultCombinations, "result combination");
+
       resultCombinations.forEach((combination) => {
         const [primary, secondary] = combination.split("/");
+        console.log(primary, secondary, "ps");
         if (!availabilityMap[primary]) {
           availabilityMap[primary] = { available: false, combinations: [] };
         }
@@ -271,13 +300,11 @@ $(document).ready(function () {
         });
       });
 
-      console.log("Updated Availability Map:", availabilityMap);
-
       // Update the DOM based on availabilityMap
       slide.querySelectorAll(".option-btn").forEach((button) => {
         const optionValue = button.dataset.name;
         const isAvailable = availabilityMap[optionValue]?.available;
-        if (isAvailable === false) {
+        if (!isAvailable) {
           button.disabled = true;
           button.classList.add("disabled");
           button.classList.add("out-of-stock");
@@ -303,35 +330,27 @@ $(document).ready(function () {
         });
 
       const selectionString = activeValues.join(" / ");
-      console.log("Selected Combination:", selectionString);
       return selectionString;
     }
 
     $(slide)
       .find(".option-btn")
       .click(function (e) {
-        const $btn = $(this); // The clicked button
-        console.log("clicked button", $btn);
+        const $btn = $(this);
 
-        // Fetch data from the closest `.option-group`
         const optionName = $btn
           .closest(".option-group")
           .find(".option-label")
           .data("option-name");
         const optionValue = $btn.data("name");
-        console.log("checking clicked option name", optionName);
-        console.log("checking option value", optionValue);
         $btn.closest(".option-group").find(".option-btn").removeClass("active");
         $btn.addClass("active");
 
-        // Update the selected value for the clicked option within the corresponding group
         selectedValues[optionName] = optionValue;
         recentlySelectedValue = {
           group: optionName,
           value: optionValue,
         };
-
-        console.log("selected value");
         const selectedSlide = $(slide);
         updateOptions(selectedSlide[0]);
       });

@@ -1,24 +1,31 @@
 {{ 'https://cdn.tailwindcss.com' | script_tag }}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"
+  integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA=="
+  crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"
+  integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {{ 'video-carousel.css' | asset_url | stylesheet_tag }}
 <script src="{{ 'carousel.js' | asset_url}}" defer="defer"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-  crossorigin="anonymous"></script>
 {%- style -%}
 .section--{{section.id}}-padding {
-padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
-padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+padding-top: {{ block.settings.padding_top | times: 0.75 | round: 0 }}px;
+padding-bottom: {{ block.settings.padding_bottom | times: 0.75 | round: 0 }}px;
 }
 
 @media screen and (min-width: 750px) {
 .section--{{section.id}}-padding {
-padding-top: {{ section.settings.padding_top }}px;
-padding-bottom: {{ section.settings.padding_bottom }}px;
+padding-top: {{ block.settings.padding_top }}px;
+padding-bottom: {{ block.settings.padding_bottom }}px;
 }
 }
 {%- endstyle -%}
+
 
 
 {{ 'main.css' | asset_url | stylesheet_tag }}
@@ -29,47 +36,31 @@ padding-bottom: {{ section.settings.padding_bottom }}px;
 {% assign videoCarouselData = videoCarouselTitle.value %}
 {% assign videoCarouselSettingData = videoCarouselSettings.value %}
 {% assign videoCarouselInfo = videoCarouselData.videoUrls %}
-{{videoCarouselInfo}}
-{% for data in videoCarouselInfo %}
-<br>
-inside loop{{data}}
-<br>
-
-{% for productData in data.products %}
-hello wortld 2
-{{productData}}
-{% assign shopify_product = collections.all.products | where: "handle", productData.handle | first %}
-{{shopify_product}}
-{%endfor %}
-{%endfor %}
-<h1>Hello worldd</h1>
-
-{{section.id}}
 
 <section class="section--{{section.id}}-padding">
-  <div class='page-width'>
+  <div class="page-width">
     <div class="video-section-inner">
       <div class="video-carousel-main-wrapper swiper swiper-container">
         <div class="video-carousel-inner-wrapper swiper-wrapper ">
           {% for data in videoCarouselInfo %}
           {% for productData in data.products %}
-          {% assign shopify_product = collections.all.products | where: "handle", productData.handle | first %}
+          {% assign shopify_product = collections.all.products | where: 'handle', productData.handle | first %}
           <div class="video-carousle-slides swiper-slide">
             <div class="video-carousel-video-wrapper" style="
-                {% if videoCarouselSettingData.turnOnBorder %}
-                 {% if videoCarouselSettingData.borderWidth and videoCarouselSettingData.borderColor %}
-                   border: {{ videoCarouselSettingData.borderWidth }}px solid {{ videoCarouselSettingData.borderColor }};
-                 {% endif %}
-                {% endif %}
-              ">
+                    {% if videoCarouselSettingData.turnOnBorder %}
+                     {% if videoCarouselSettingData.borderWidth and videoCarouselSettingData.borderColor %}
+                       border: {{ videoCarouselSettingData.borderWidth }}px solid {{ videoCarouselSettingData.borderColor }};
+                     {% endif %}
+                    {% endif %}
+                  ">
               <video width="100%" height="100%" class="swiper-video" {% if videoCarouselSettingData.autoPlay %} autoplay
                 {% endif %} {% if videoCarouselSettingData.loopVideo %} loop {% endif %} {% if
                 videoCarouselSettingData.muteSound %} muted {% endif %}>
-                <source src={{ data.url}} type="video/mp4">
+                <source src="{{ data.url}}" type="video/mp4">
                 Your browser does not support the video tag.
               </video>
 
-              <div class="video-custom-muteicon mute-toggle hidden" id="mute-toggle">
+              <div class="video-custom-muteicon mute-toggle  " id="mute-toggle">
                 <!-- Default muted icon -->
                 <span class="muted-icon" id="muted-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" height="20px" width="20px">
@@ -89,35 +80,46 @@ hello wortld 2
               </div>
               <!-- variant pickers -->
               <div class="variant-picker-addtocart variant-picker-opentoggle">
+                {% assign multiple_variant = false %}
                 {% assign variant_length = shopify_product.variants.size %}
                 {% assign variant_id = shopify_product.variants.first.id %}
+
                 {% if variant_length > 1 %}
+                {% assign multiple_variant = true %}
                 <div class="product-variant-picker">
                   {% render 'swatch', variant_product: shopify_product %}
                 </div>
                 {% else %}
+                {% assign multiple_variant = false %}
                 <div class="product-add-to-cart">
                   <button class="button product-add-to-cart" data-product-id="{{variant_id}}">Add to Cart</button>
                 </div>
                 {% endif %}
               </div>
             </div>
+            {% if shopify_product %}
             <div class="video-carousel-product-info">
               <div class="video-carousel-product-info-inner">
-                {% if section.settings.show_product_image %}
+                {% if block.settings.show_product_image %}
+                {% if shopify_product.featured_image %}
+                <div class="product-info-image">
+                  <img src="{{ shopify_product.featured_image | img_url: 'large' }}" alt="{{ shopify_product.title }}">
+                </div>
+                {% else %}
                 <div class="product-info-image">
                   <img src="{{ shopify_product.featured_image | img_url: 'large' }}" alt="{{ shopify_product.title }}">
                 </div>
                 {% endif %}
+                {% endif %}
                 <div class="product-info-details">
-                  {% if section.settings.show_product_title %}
+                  {% if block.settings.show_product_title %}
                   {% if shopify_product.title != blank %}
                   <div class="product-title">
                     <h2>{{ shopify_product.title }}</h2>
                   </div>
                   {% endif %}
                   {% endif %}
-                  {% if section.settings.show_product_price %}
+                  {% if block.settings.show_product_price %}
                   <div class="product-prices">
                     {% if shopify_product.price.compare_at_price != blank %}
                     <p class="product-compare-at-price">{{ shopify_product.price.compare_at_price | money }}</p>
@@ -129,23 +131,28 @@ hello wortld 2
                   {% endif %}
                 </div>
                 <div class="product-info-main-icons">
-                  <div class="slide-content-plus-icon">
+
+                  <button
+                    class="slide-content-plus-icon {% if shopify_product.available == false %} disabled {% endif %}"
+                    data-multiple-variant="{{multiple_variant}}" {% if shopify_product.available==false %} disabled {%
+                    endif %} data_single_variant_id="{{variant_id}}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 20px; height: 20px;">
                       <!--!Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                       <path
                         d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM232 344l0-64-64 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l64 0 0-64c0-13.3 10.7-24 24-24s24 10.7 24 24l0 64 64 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-64 0 0 64c0 13.3-10.7 24-24 24s-24-10.7-24-24z" />
                     </svg>
-                  </div>
-                  <div class="slide-content-minus-icon ">
+                  </button>
+                  <button class="slide-content-minus-icon ">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 20px; height: 20px;">
                       <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.-->
                       <path
                         d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM184 232l144 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24z" />
                     </svg>
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
+            {% endif %}
           </div>
           {% endfor %}
           {% endfor %}
@@ -175,8 +182,9 @@ hello wortld 2
   </div>
 </section>
 
-
 <script>
+  window.autoplay_middle_video = {{ block.settings.autplay_middle_video }};
+  let autoplay_middle_video = true
   $(document).ready(function () {
     var $swiper = $(".swiper-container");
     var $bottomSlide = null;
@@ -193,31 +201,46 @@ hello wortld 2
       },
       on: {
         slideChange: function () {
-          console.log('Slide changed');
           updateMiddleSlide();
         },
       },
       breakpoints: {
         640: {
-          slidesPerView: 2,
+          slidesPerView: {{ block.settings.no_columns_mobile }},
         },
-        768: {
-          slidesPerView: 3,
-        },
-        1024: {
-          slidesPerView: 5,
+    768: {
+    slidesPerView: 3,
+  },
+    1024: {
+    slidesPerView: {{ block.settings.no_columns_desktop }},
         },
       },
     });
-    function updateMiddleSlide() {
-      const activeIndex = $swiper.activeIndex;
-      const slides = $swiper.slides;
-      console.log('checking slides and active index', activeIndex, slides)
+  function updateMiddleSlide() {
+    if (autoplay_middle_video) {
+      $('.video-carousle-slides').each(function () {
+        const video = $(this).find('video.swiper-video').get(0);
+        if (video) {
+          video.removeAttribute('autoplay');
+          video.pause();
+        }
 
+        setTimeout(() => {
+          if ($(this).hasClass('swiper-slide-active')) {
+            if (video) {
+              video.setAttribute('autoplay', 'true');
+              video.play();
+            }
+
+          }
+        }, 100)
+      });
     }
-    updateMiddleSlide();
+  }
+  updateMiddleSlide();
   });
 </script>
+
 {% schema %}
 {
 "name": "App video carousel",
@@ -229,6 +252,49 @@ hello wortld 2
 "id": "metafield_key",
 "label": "Carousel KEY",
 "default": "Carousel KEY"
+},
+{
+"type": "checkbox",
+"id": "autplay_middle_video",
+"label": "Autoplay the centerd video only ",
+"default":true
+},
+{
+"type": "checkbox",
+"id": "show_product_title",
+"default":true,
+"label": "Show product title"
+},
+{
+"type": "checkbox",
+"id": "show_product_price",
+"default":true,
+"label": "Show product price"
+},
+{
+"type": "checkbox",
+"id": "show_product_image",
+"default":true,
+"label": "Show product image"
+},
+
+{
+"type": "range",
+"id": "no_columns_desktop",
+"min": 1,
+"max": 5,
+"step": 1,
+"default": 4,
+"label": "No of columns on desktop"
+},
+{
+"type": "range",
+"id": "no_columns_mobile",
+"min": 1,
+"max": 5,
+"step": 1,
+"default": 2,
+"label": "No of columns on mobile"
 },
 {
 "type": "header",
@@ -253,49 +319,6 @@ hello wortld 2
 "unit": "px",
 "label": "padding bottom",
 "default": 36
-},
-{
-"type": "checkbox",
-"id": "autplay_middle_video",
-"label": "Autoplay the centerd video only ",
-"default": true
-},
-{
-"type": "checkbox",
-"id": "show_product_title",
-"default": true,
-"label": "Show product title"
-},
-{
-"type": "checkbox",
-"id": "show_product_price",
-"default": true,
-"label": "Show product price"
-},
-{
-"type": "checkbox",
-"id": "show_product_image",
-"default": true,
-"label": "Show product image"
-},
-{
-"type": "range",
-"id": "columns_desktop_brands",
-"min": 1,
-"max": 5,
-"step": 1,
-"default": 4,
-"label": "No of columns on desktop"
-
-},
-{
-"type": "range",
-"id": "columns_mobile_brands",
-"min": 1,
-"max": 5,
-"step": 1,
-"default": 2,
-"label": "No of columns on mobile"
 }
 ]
 
