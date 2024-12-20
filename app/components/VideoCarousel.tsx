@@ -1,15 +1,15 @@
 import { useFetcher } from "@remix-run/react";
-import { SaveBar } from "@shopify/app-bridge-react";
-import {
-  Button,
-  Icon,
-  MediaCard,
-  Spinner,
-  VideoThumbnail,
-} from "@shopify/polaris";
+import { Modal, SaveBar } from "@shopify/app-bridge-react";
+import { Button, Icon, Spinner } from "@shopify/polaris";
 import { Reorder } from "motion/react";
 import { useEffect, useState } from "react";
-import { DeleteIcon, XIcon } from "@shopify/polaris-icons";
+import {
+  DeleteIcon,
+  PlayIcon,
+  DragHandleIcon,
+  MinusCircleIcon,
+} from "@shopify/polaris-icons";
+
 const VideoCarousel = ({
   videoUrls,
   settingData,
@@ -20,8 +20,10 @@ const VideoCarousel = ({
   isLoading: boolean;
 }) => {
   const [items, setItems] = useState(videoUrls);
-  console.log(items, "loaded on frist tyr");
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const fetcher = useFetcher();
+
   useEffect(() => {
     setItems(videoUrls);
   }, [videoUrls]);
@@ -77,104 +79,143 @@ const VideoCarousel = ({
     fetcher.submit(formData, { method: "PUT" });
     shopify.saveBar.hide("my-save-bar");
   };
+
   const handleDiscard = () => {
     setItems(videoUrls);
     shopify.saveBar.hide("my-save-bar");
   };
+
+  const handleModalOpen = (url: string) => {
+    setActiveVideoUrl(url);
+    shopify.modal.show("video-modal");
+  };
+
+  const handleDeleteVideo = (url: string) => {
+    setItems((prevItems) => prevItems.filter((item) => item.url !== url));
+    shopify.saveBar.show("my-save-bar");
+  };
+
   if (fetcher.state === "loading") {
     shopify.toast.show("Setting saved successfully");
   }
+  const handleReorder = (newItems: any) => {
+    const hasChanged = videoUrls.some((item, index) => {
+      return (
+        !newItems[index] ||
+        JSON.stringify(item) !== JSON.stringify(newItems[index])
+      );
+    });
+    hasChanged
+      ? shopify.saveBar.show("my-save-bar")
+      : shopify.saveBar.hide("my-save-bar");
+
+    setItems(newItems);
+  };
+
   return (
-    <Reorder.Group axis="x" values={items} onReorder={setItems}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 relative">
-        {isLoading ? (
-          <div className="absolute right-0 top-0">
+    <Reorder.Group axis="y" values={items} onReorder={handleReorder}>
+      <div className="relative bg-white rounded-lg overflow-hidden">
+        {isLoading && (
+          <div className="absolute right-2 top-2">
             <Spinner size="small" />
           </div>
-        ) : null}
-        {items.map(({ url, products }) => (
-          <Reorder.Item key={url} value={url}>
-            <div className="overflow-hidden rounded-lg p-4 border border-gray-300 bg-white relative">
-              <video
-                controls
-                loop={settingData.loopVideo}
-                muted={settingData.muteSound}
-                autoPlay
-                className="w-full h-full object-cover rounded-t-lg"
-              >
-                <source src={url} type="video/mp4" />
-              </video>
+        )}
+        <div className="flex flex-col py-2">
+          <div className="flex text-left font-semibold border-b p-2">
+            <div className="w-[7%] p-2">Drag</div>
+            <div className="w-[18%] p-2">Video</div>
+            <div className="w-[40%] p-2">Products</div>
+            <div className="w-[25%] p-2">Preview</div>
+            <div className="w-[10%] p-2">Actions</div>
+          </div>
 
-              <div className="mt-4">
-                {products.length > 0 ? (
-                  products.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex cursor-pointer items-center gap-2 justify-between mb-2"
-                    >
-                      <div className="flex items-center gap-2 w-full">
+          {items.map((item) => (
+            <Reorder.Item value={item} key={item.url}>
+              <div className="flex  hover:bg-gray-50 border-b">
+                <div className="w-[7%] flex items-center justify-center">
+                  <Button
+                    icon={DragHandleIcon}
+                    size="slim"
+                    aria-label="Drag to reorder"
+                  />
+                </div>
+                <div className="w-[18%] p-2">
+                  <video
+                    loop={settingData.loopVideo}
+                    muted={settingData.muteSound}
+                    autoPlay
+                    className="w-full h-14 object-cover rounded"
+                  >
+                    <source src={item.url} type="video/mp4" />
+                  </video>
+                </div>
+                <div className="w-[40%] p-2">
+                  {item.products.length > 0 ? (
+                    item.products.map((product) => (
+                      <div
+                        key={product.id}
+                        className="flex items-center gap-2 mb-2 border rounded-lg shadow-sm p-2"
+                      >
                         <img
                           src={product.image}
-                          alt=""
-                          className="w-10 h-10 rounded-full object-cover"
+                          alt="Product"
+                          className="w-8 h-8 rounded-full object-cover"
                         />
-                        <p className=" w-full py-2 px-4 rounded-sm ">
-                          {product.title}
-                        </p>
+                        <p className="text-sm w-full">{product.title}</p>
+                        <button
+                          onClick={() => removeProduct(item.url, product.id)}
+                          className="text-red-500 text-lg font-bold"
+                        >
+                          <Icon source={MinusCircleIcon} />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeProduct(url, product.id)}
-                        className="text-red-500 text-lg font-bold"
-                      >
-                        <Icon source={XIcon} />
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <Button variant="primary" onClick={() => addProduct(url)}>
-                    Add product
+                    ))
+                  ) : (
+                    <Button
+                      variant="primary"
+                      onClick={() => addProduct(item.url)}
+                    >
+                      Add product
+                    </Button>
+                  )}
+                </div>
+                <div className="w-[25%] p-2">
+                  <Button
+                    variant="secondary"
+                    icon={PlayIcon}
+                    onClick={() => handleModalOpen(item.url)}
+                  >
+                    Preview Video
                   </Button>
-                )}
+                </div>
+                <div className="w-[10%] p-2">
+                  <Button
+                    onClick={() => handleDeleteVideo(item.url)}
+                    tone="critical"
+                    icon={DeleteIcon}
+                    size="slim"
+                  />
+                </div>
               </div>
-              <div className="flex items-center justify-center  border-t border-none py-2">
-                <Button
-                  onClick={() => {
-                    setItems((prevItems) =>
-                      prevItems.filter((item) => item.url !== url),
-                    );
-                    shopify.saveBar.show("my-save-bar");
-                  }}
-                  tone="critical"
-                  icon={DeleteIcon}
-                />
-              </div>
-            </div>
-            {/* 
-            <MediaCard
-              portrait
-              title={products.map((product) => product.title) || ""}
-              primaryAction={{
-                content: "",
-                icon: DeleteIcon,
-
-                onAction: () => {},
-              }}
-              description=""
-              onDismiss={handleDiscard}
-            >
-              <video
-                controls
-                loop
-                muted
-                autoPlay
-                className="w-full h-full object-cover rounded-t-lg"
-              >
-                <source src={url} type="video/mp4" />
-              </video>
-            </MediaCard> */}
-          </Reorder.Item>
-        ))}
+            </Reorder.Item>
+          ))}
+        </div>
       </div>
+
+      <Modal id="video-modal">
+        {activeVideoUrl && (
+          <video
+            controls
+            loop={settingData.loopVideo}
+            muted={settingData.muteSound}
+            autoPlay
+            className="w-full h-[400px] object-cover"
+          >
+            <source src={activeVideoUrl} type="video/mp4" />
+          </video>
+        )}
+      </Modal>
+
       <SaveBar id="my-save-bar">
         <button variant="primary" onClick={handleSubmit}></button>
         <button onClick={handleDiscard}></button>
