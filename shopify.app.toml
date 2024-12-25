@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "6584b623d2297c6e18d1d91c103bfe69"
-application_url = "https://jill-advisor-syndicate-pocket.trycloudflare.com"
+application_url = "https://texts-pricing-iraqi-how.trycloudflare.com"
 embedded = true
 name = "frame-fusion"
 handle = "frame-fusion"
@@ -19,9 +19,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://jill-advisor-syndicate-pocket.trycloudflare.com/auth/callback",
-  "https://jill-advisor-syndicate-pocket.trycloudflare.com/auth/shopify/callback",
-  "https://jill-advisor-syndicate-pocket.trycloudflare.com/api/auth/callback"
+  "https://texts-pricing-iraqi-how.trycloudflare.com/auth/callback",
+  "https://texts-pricing-iraqi-how.trycloudflare.com/auth/shopify/callback",
+  "https://texts-pricing-iraqi-how.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

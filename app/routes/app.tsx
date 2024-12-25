@@ -25,6 +25,7 @@ export default function App() {
           Home
         </Link>
         <Link to="/app/video-settings">Settings</Link>
+        <Link to="/app/pdp-settings">PDP Settings</Link>
         <Link to="/app/global-settings">Global Settings</Link>
       </NavMenu>
       <Outlet />
