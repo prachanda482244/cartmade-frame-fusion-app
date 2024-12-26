@@ -193,6 +193,43 @@ export async function getMetafield(admin: any, metafieldId: string) {
   });
   return (await response.json()).data.node;
 }
+
+export async function fetchShopMetafieldsByNamespace(
+  admin: any,
+  namespace: string,
+  first: number = 10,
+) {
+  const query = `
+      query GetShopMetafieldsByNamespace($namespace: String!, $first: Int = 10) {
+        shop {
+          metafields(first: $first, namespace: $namespace) {
+            edges {
+              node {
+                ownerType
+                id
+                namespace
+                key
+                jsonValue
+                type
+              }
+            }
+          }
+        }
+      }
+    `;
+
+  const variables = { namespace, first };
+
+  try {
+    const response = await admin.graphql(query, { variables });
+    const responseBody = await response.json();
+    return responseBody.data.shop.metafields.edges;
+  } catch (error) {
+    console.error("Error fetching shop metafields by namespace:", error);
+    return [];
+  }
+}
+
 export async function updateMetafield(
   admin: any,
   shopId: string,

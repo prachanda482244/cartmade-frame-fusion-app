@@ -67,7 +67,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         { url: actualUrl, products: [], videoId: genericFile.id },
       ],
     };
-    console.log(updatedData, "UPDATED DATA");
 
     return await updateMetafield(
       admin,
