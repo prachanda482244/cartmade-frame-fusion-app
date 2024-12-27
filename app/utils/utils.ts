@@ -3,6 +3,7 @@ import {
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
 import axios from "axios";
+import { Console } from "console";
 import path from "path";
 
 export function generateRandomString() {
@@ -60,7 +61,6 @@ export const uploadVideo = async (
       },
     },
   );
-
   const target =
     stagedUploadsQueryResult.data.data.stagedUploadsCreate.stagedTargets[0];
   const params = target.parameters;
@@ -341,3 +341,176 @@ export async function getMultipleMetafields(
 
   return (await response.json()).data.nodes;
 }
+export const assignMetafieldToSpecificProduct = async (
+  admin: any,
+  productId: string,
+  videoUrls: string[],
+) => {
+  const productAssignQuery = `
+    mutation SetProductMetafield($productId: ID!, $videoUrl: String!) {
+      metafieldsSet(metafields: [
+        {
+          namespace: "frame_fusion"
+          key: "products"
+          value: $videoUrl
+          type: "json"
+          ownerId: $productId
+        }
+      ]) {
+        metafields {
+          id
+          namespace
+          key
+          jsonValue
+          type
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await admin.graphql(productAssignQuery, {
+      variables: {
+        productId: productId,
+        videoUrl: JSON.stringify({ videoUrls: videoUrls }),
+      },
+    });
+
+    const { data, errors } = await response.json();
+
+    if (errors) {
+      console.error("GraphQL Error:", errors);
+      return { success: false, errors };
+    }
+
+    if (data.metafieldsSet.userErrors.length > 0) {
+      console.error("User Errors:", data.metafieldsSet.userErrors);
+      return { success: false, userErrors: data.metafieldsSet.userErrors };
+    }
+
+    return { metafields: data.metafieldsSet.metafields };
+  } catch (error) {
+    console.error("An error occurred:", error);
+    return { success: false, error };
+  }
+};
+
+export const getProductMetafield = async (admin: any, productId: string) => {
+  const productQuery = `
+query GetProductMetafields($productId: ID!) {
+  product(id: $productId) {
+    id
+    title
+    metafields(first: 10, namespace: "frame_fusion") {
+      edges {
+        node {
+          id
+          namespace
+          key
+          value
+          jsonValue
+          type
+        }
+      }
+    }
+  }
+}
+`;
+  try {
+    const response = await admin.graphql(productQuery, {
+      variables: {
+        productId: productId,
+      },
+    });
+
+    const { data, errors } = await response.json();
+    if (errors) {
+      console.error("GraphQL Error:", errors);
+      return { success: false, errors };
+    }
+
+    if (!data.product.metafields.edges?.[0]) {
+      console.error("User Errors");
+      return { success: false, userErrors: "Error occured" };
+    }
+    return { metafields: data.product.metafields.edges?.[0] };
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+};
+
+export const getMutlipleProductsMetafields = async (
+  admin: any,
+  productIds: string[],
+) => {
+  const productQuery = `
+  query GetProductMetafields($productIds: [ID!]!) {
+    nodes(ids: $productIds) {
+      ... on Product {
+        id
+        title
+        handle
+        featuredMedia{
+        preview{
+          image{
+            url
+          }
+        }
+      }
+        metafields(first: 10, namespace: "frame_fusion") {
+          edges {
+            node {
+              id
+              namespace
+              key
+              jsonValue
+              type
+            }
+          }
+        }
+      }
+    }
+  }
+  `;
+
+  try {
+    const response = await admin.graphql(productQuery, {
+      variables: {
+        productIds: productIds,
+      },
+    });
+
+    const { data, errors } = await response.json();
+    if (errors) {
+      console.error("GraphQL Error:", errors);
+      return { success: false, errors };
+    }
+
+    if (!data.nodes || data.nodes.length === 0) {
+      console.error("No products found.");
+      return { success: false, userErrors: "No products found." };
+    }
+
+    const productsWithMetafields = data.nodes.map((node: any) => {
+      return {
+        id: node.id,
+        title: node.title,
+        imageUrl:
+          node.featuredMedia != null
+            ? node.featuredMedia["preview"]["image"]["url"]
+            : "https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png",
+        metafields: node.metafields.edges[0]["node"]?.jsonValue,
+      };
+    });
+
+    return { products: productsWithMetafields };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return { success: false, error: "Error fetching products" };
+  }
+};

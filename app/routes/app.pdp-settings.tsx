@@ -4,9 +4,12 @@ import { SaveBar } from "@shopify/app-bridge-react";
 import { Button, EmptyState, LegacyCard, Page } from "@shopify/polaris";
 import { apiVersion, authenticate } from "app/shopify.server";
 import {
+  assignMetafieldToSpecificProduct,
   createGenericFile,
   fetchShopMetafieldsByNamespace,
   getMetafield,
+  getMutlipleProductsMetafields,
+  getProductMetafield,
   getReadyFileUrl,
   getShopId,
   parseFormData,
@@ -32,14 +35,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       "product_with_video",
       products,
     );
-    console.log(productMetafield);
     return "Products updated";
   } else if (request.method === "PUT") {
     const formData = await parseFormData(request);
     const url = new URL(request.url);
     const productId = url.searchParams.get("productId") as string;
     const video = formData.get("video") as File;
-    console.log(productId, "productid");
     if (!video && !productId) return;
     const videoPath = path.join(process.cwd(), "public/uploads", video.name);
     const videoBuffer = fs.readFileSync(videoPath);
@@ -56,44 +57,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const genericFile = await createGenericFile(resourceUrl, admin);
     const genericFileId = genericFile.id;
     const actualUrl = await getReadyFileUrl(admin, genericFile.id);
-    const metafield: any[] = await fetchShopMetafieldsByNamespace(
-      admin,
-      "Product_page",
-    );
-    const productInfo = metafield?.[0]?.node?.jsonValue
-      ? metafield?.[0]?.node?.jsonValue
-      : [];
-    const productMap = new Map<string, any>();
-    productInfo.forEach((product: any) => {
-      productMap.set(product.id, product);
-    });
-    const product = productMap.get(productId);
-    if (product) {
-      const updatedProduct = {
-        ...product,
-        videoUrls: [
-          ...(product?.videoUrls || []),
-          { url: actualUrl, videoId: genericFileId },
-        ],
-      };
 
-      productMap.set(product.id, updatedProduct);
-    }
-    const updatedJson = Array.from(productMap.values());
-    const productMetafield = await updateMetafield(
+    const getMetadata: any = await getProductMetafield(admin, productId);
+    const storedVideo = getMetadata?.metafields?.node.jsonValue["videoUrls"];
+    let updatedVideoUrl;
+    storedVideo?.length
+      ? (updatedVideoUrl = [
+          ...storedVideo,
+          { videoUrl: actualUrl, videoId: genericFileId },
+        ])
+      : (updatedVideoUrl = [{ videoUrl: actualUrl, videoId: genericFileId }]);
+
+    const metafieldData = await assignMetafieldToSpecificProduct(
       admin,
-      shopId,
-      "Product_page",
-      "product_with_video",
-      updatedJson,
+      productId,
+      updatedVideoUrl,
     );
-    if (!productMetafield) {
+    if (!metafieldData) {
       return {
-        message: "Failed to update product",
+        metadata: [],
       };
     }
     return {
-      message: "product updated successfully",
+      metafieldData,
     };
   }
   return null;
@@ -108,9 +94,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const productInfo = metafield?.[0]?.node?.jsonValue
     ? metafield?.[0]?.node?.jsonValue
     : [];
-
+  console.log(productInfo, "pinfo");
+  const productIds = productInfo.map(({ id }: any) => id);
+  const productss = await getMutlipleProductsMetafields(admin, productIds);
+  const data = {
+    title: "",
+    handle: "",
+    id: "",
+    image: "",
+    videoUrls: [],
+  };
+  // const returnProduct = productss.map()
+  console.log(productss, "product");
   return {
     productInfo,
+    productss,
   };
 };
 const PDPSettings = () => {
