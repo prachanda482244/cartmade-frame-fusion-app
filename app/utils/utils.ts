@@ -504,7 +504,9 @@ export const getMutlipleProductsMetafields = async (
           node.featuredMedia != null
             ? node.featuredMedia["preview"]["image"]["url"]
             : "https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png",
-        metafields: node.metafields.edges[0]["node"]?.jsonValue,
+        videoUrls: node.metafields.edges.length
+          ? node.metafields.edges[0]["node"]?.jsonValue.videoUrls
+          : [],
       };
     });
 

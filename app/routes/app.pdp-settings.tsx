@@ -18,7 +18,7 @@ import {
 } from "app/utils/utils";
 import path from "path";
 import fs from "fs";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -91,29 +91,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     admin,
     "Product_page",
   );
-  const productInfo = metafield?.[0]?.node?.jsonValue
+  const storedProduct = metafield?.[0]?.node?.jsonValue
     ? metafield?.[0]?.node?.jsonValue
     : [];
-  console.log(productInfo, "pinfo");
-  const productIds = productInfo.map(({ id }: any) => id);
-  const productss = await getMutlipleProductsMetafields(admin, productIds);
-  const data = {
-    title: "",
-    handle: "",
-    id: "",
-    image: "",
-    videoUrls: [],
-  };
-  // const returnProduct = productss.map()
-  console.log(productss, "product");
+
+  const productIds = storedProduct.map(({ id }: any) => id);
+  const { products: productInfo } = await getMutlipleProductsMetafields(
+    admin,
+    productIds,
+  );
+
   return {
     productInfo,
-    productss,
   };
 };
 const PDPSettings = () => {
   const loaderData: any = useLoaderData();
   const [items, setItems] = useState<any[]>(loaderData?.productInfo || []);
+
   const [productId, setProductId] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fetcher = useFetcher();
@@ -177,6 +172,7 @@ const PDPSettings = () => {
   };
 
   console.log(loaderData, "loaderdata");
+  console.log(items, "itemss");
   return (
     <Page
       title="Product Page"
@@ -206,7 +202,7 @@ const PDPSettings = () => {
                     <td className="px-4 py-2 border-b border-gray-300">
                       <img
                         src={
-                          item.image ||
+                          item.imageUrl ||
                           "https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                         }
                         alt={item.title}
@@ -244,6 +240,14 @@ const PDPSettings = () => {
                           Remove
                         </Button>
                       </div>
+                      {item.videoUrls.length &&
+                        item.videoUrls.map((video: any) => (
+                          <div key="12" className="w-12 h-12">
+                            <video height={50} width={50}>
+                              <source src={video.videoUrl} type="video/mp4" />
+                            </video>
+                          </div>
+                        ))}
                     </td>
                   </tr>
                 ))}

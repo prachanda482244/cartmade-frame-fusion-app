@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "6584b623d2297c6e18d1d91c103bfe69"
-application_url = "https://distinction-harold-mapping-opposite.trycloudflare.com"
+application_url = "https://therapist-md-wonderful-generation.trycloudflare.com"
 embedded = true
 name = "frame-fusion"
 handle = "frame-fusion"
@@ -19,9 +19,9 @@ scopes = "write_files,read_files,write_themes,write_products,read_products"
 
 [auth]
 redirect_urls = [
-  "https://distinction-harold-mapping-opposite.trycloudflare.com/auth/callback",
-  "https://distinction-harold-mapping-opposite.trycloudflare.com/auth/shopify/callback",
-  "https://distinction-harold-mapping-opposite.trycloudflare.com/api/auth/callback"
+  "https://therapist-md-wonderful-generation.trycloudflare.com/auth/callback",
+  "https://therapist-md-wonderful-generation.trycloudflare.com/auth/shopify/callback",
+  "https://therapist-md-wonderful-generation.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
