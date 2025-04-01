@@ -7,7 +7,6 @@ import {
   assignMetafieldToSpecificProduct,
   createGenericFile,
   fetchShopMetafieldsByNamespace,
-  getMetafield,
   getMutlipleProductsMetafields,
   getProductMetafield,
   getReadyFileUrl,
@@ -87,6 +86,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
+
   const metafield: any[] = await fetchShopMetafieldsByNamespace(
     admin,
     "Product_page",
@@ -240,8 +240,8 @@ const PDPSettings = () => {
                           Remove
                         </Button>
                       </div>
-                      {item.videoUrls.length &&
-                        item.videoUrls.map((video: any) => (
+                      {item?.videoUrls?.length &&
+                        item?.videoUrls.map((video: any) => (
                           <div key="12" className="w-12 h-12">
                             <video height={50} width={50}>
                               <source src={video.videoUrl} type="video/mp4" />

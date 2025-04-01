@@ -105,6 +105,17 @@ $(document).ready(function () {
       });
 
     function addToCart(id) {
+      const url = "https://mu-goods-forwarding-significantly.trycloudflare.com"
+      const f = fetch(`${url}/api/update-analytics`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          "productVariantId": id,
+          "count": 1,
+          event: "PRODUCT_ADD_TO_CART"
+        })
+      })
+      console.log(f, "fudsfkhsd")
       const cartdrawer = document.querySelector("cart-drawer");
       const items = {
         quantity: 1,
@@ -146,8 +157,8 @@ $(document).ready(function () {
         error: function (err) {
           toastr.error(
             err.responseJSON?.message ||
-              err.responseJSON.description ||
-              "Error while adding to the cart",
+            err.responseJSON.description ||
+            "Error while adding to the cart",
           );
         },
       });

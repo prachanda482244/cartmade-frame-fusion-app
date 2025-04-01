@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "6584b623d2297c6e18d1d91c103bfe69"
-application_url = "https://therapist-md-wonderful-generation.trycloudflare.com"
+application_url = "https://mu-goods-forwarding-significantly.trycloudflare.com"
 embedded = true
 name = "frame-fusion"
 handle = "frame-fusion"
@@ -19,15 +19,15 @@ scopes = "write_files,read_files,write_themes,write_products,read_products"
 
 [auth]
 redirect_urls = [
-  "https://therapist-md-wonderful-generation.trycloudflare.com/auth/callback",
-  "https://therapist-md-wonderful-generation.trycloudflare.com/auth/shopify/callback",
-  "https://therapist-md-wonderful-generation.trycloudflare.com/api/auth/callback"
+  "https://mu-goods-forwarding-significantly.trycloudflare.com/auth/callback",
+  "https://mu-goods-forwarding-significantly.trycloudflare.com/auth/shopify/callback",
+  "https://mu-goods-forwarding-significantly.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
 embedded = false
 
 [build]
-dev_store_url = "prachanda-test.myshopify.com"
+dev_store_url = "mwm55.myshopify.com"
 automatically_update_urls_on_dev = true
 include_config_on_deploy = true
