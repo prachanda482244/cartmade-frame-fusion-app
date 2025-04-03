@@ -31,11 +31,10 @@ const Preview = ({
     formData.append("videoProducts", JSON.stringify(items));
     formData.append("flag", "videoProduct");
     fetcher.submit(formData, { method: "PATCH" });
-    shopify.saveBar.hide("my-save-bar");
   };
   const handleDiscard = () => {
     setItems(videoUrls);
-    shopify.saveBar.hide("my-save-bar");
+    setShowActionButtons(false);
   };
   const handleDeleteVideo = (url: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.videoUrl !== url));
@@ -48,7 +47,7 @@ const Preview = ({
   const handleModalOpen = (url: string) => {
     setActiveVideoUrl(url);
   };
-
+  const [showActionsButtons, setShowActionButtons] = useState<boolean>(false);
   const handleReorder = (newItems: any) => {
     const hasChanged = videoUrls.some((item, index) => {
       return (
@@ -56,9 +55,7 @@ const Preview = ({
         JSON.stringify(item) !== JSON.stringify(newItems[index])
       );
     });
-    hasChanged
-      ? shopify.saveBar.show("my-save-bar")
-      : shopify.saveBar.hide("my-save-bar");
+    hasChanged ? setShowActionButtons(true) : setShowActionButtons(false);
 
     setItems(newItems);
   };
@@ -69,7 +66,7 @@ const Preview = ({
         setIsOpen(false);
         setShowModal(false);
       }}
-      className="fixed inset-0 bg-gray-800 bg-opacity-70 flex justify-center items-center"
+      className="fixed inset-0 bg-[#2223277a]  flex justify-center items-center"
     >
       <div className="w-[70%] flex justify-center items-center min-h-screen ">
         {activeVideoUrl && (
@@ -93,7 +90,7 @@ const Preview = ({
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="bg-white h-full shadow-lg"
+          className="bg-white rounded-l-lg h-full shadow-lg"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative p-4">
@@ -104,16 +101,20 @@ const Preview = ({
               transition={{ delay: 0.2 }}
             >
               <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleDiscard}
-                  tone="critical"
-                  variant="primary"
-                >
-                  Discard
-                </Button>
-                <Button onClick={handleSubmit} variant="primary">
-                  Save
-                </Button>
+                {showActionsButtons && (
+                  <>
+                    <Button
+                      onClick={handleDiscard}
+                      tone="critical"
+                      variant="primary"
+                    >
+                      Discard
+                    </Button>
+                    <Button onClick={handleSubmit} variant="primary">
+                      Save
+                    </Button>
+                  </>
+                )}
                 <Button
                   onClick={() => {
                     setIsOpen(false);
