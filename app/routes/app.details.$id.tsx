@@ -57,7 +57,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const actualUrl = await getReadyFileUrl(admin, genericFile.id);
     const shopId = await getShopId(admin);
     const metafield = await getMetafield(admin, metafieldId);
-
     const updatedData = {
       ...metafield.jsonValue,
       videoUrls: [

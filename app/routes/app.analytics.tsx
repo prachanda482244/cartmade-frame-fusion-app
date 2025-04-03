@@ -71,13 +71,13 @@ const videoData = [
   { name: "Video D", clicks: 90 },
 ];
 const productData = [
-  { name: "Product A", count: 50 },
-  { name: "Product B", count: 70 },
-  { name: "Product C", count: 90 },
-  { name: "Product D", count: 60 },
-  { name: "Product E", count: 100 },
-  { name: "Product F", count: 120 },
-  { name: "Product G", count: 140 },
+  { name: "Product A", Cart: 50 },
+  { name: "Product B", Cart: 70 },
+  { name: "Product C", Cart: 90 },
+  { name: "Product D", Cart: 60 },
+  { name: "Product E", Cart: 100 },
+  { name: "Product F", Cart: 120 },
+  { name: "Product G", Cart: 140 },
 ];
 const segmentColors = [
   "#FF5733",
@@ -106,7 +106,7 @@ const Analytics = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="count" fill="#4CAF50" barSize={30} />
+              <Bar dataKey="Cart" fill="#4CAF50" barSize={30} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -141,7 +141,7 @@ const Analytics = () => {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="count" stroke="#4CAF50" />
+            <Line type="monotone" dataKey="Cart" stroke="#4CAF50" />
           </LineChart>
         </ResponsiveContainer>
       </div>

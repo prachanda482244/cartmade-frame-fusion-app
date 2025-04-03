@@ -500,6 +500,7 @@ export const getMutlipleProductsMetafields = async (
       return {
         id: node.id,
         title: node.title,
+        handle: node?.handle,
         imageUrl:
           node.featuredMedia != null
             ? node.featuredMedia["preview"]["image"]["url"]
@@ -516,3 +517,36 @@ export const getMutlipleProductsMetafields = async (
     return { success: false, error: "Error fetching products" };
   }
 };
+export async function getShopMetafield(
+  admin: any,
+  namespace: string,
+  key: string,
+) {
+  const shopMetafieldQuery = `
+    query GetShopMetafield($namespace: String!, $key: String!) {
+      shop {
+        metafield(namespace: $namespace, key: $key) {
+          id
+          jsonValue
+          type
+        }
+      }
+    }
+  `;
+
+  try {
+    if (!namespace || !key) {
+      return { error: "Both namespace and key must be provided." };
+    }
+
+    const response = await admin.graphql(shopMetafieldQuery, {
+      variables: { namespace, key },
+    });
+    const result = await response.json();
+    const metafield = result.data.shop.metafield;
+    return metafield;
+  } catch (error: any) {
+    console.error("Error fetching shop metafield:", error.message);
+    throw error;
+  }
+}

@@ -1,16 +1,20 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
-import { SaveBar } from "@shopify/app-bridge-react";
+import { Modal, SaveBar } from "@shopify/app-bridge-react";
 import { Button, EmptyState, LegacyCard, Page } from "@shopify/polaris";
 import { apiVersion, authenticate } from "app/shopify.server";
 import {
   assignMetafieldToSpecificProduct,
   createGenericFile,
+  deleteGenericFiles,
+  fetchGraphQLQuery,
   fetchShopMetafieldsByNamespace,
+  getMetafield,
   getMutlipleProductsMetafields,
   getProductMetafield,
   getReadyFileUrl,
   getShopId,
+  getShopMetafield,
   parseFormData,
   updateMetafield,
   uploadVideo,
@@ -18,6 +22,8 @@ import {
 import path from "path";
 import fs from "fs";
 import { useEffect, useRef, useState } from "react";
+import VideoCarousel from "app/components/VideoCarousel";
+import Preview from "app/components/Preview";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -34,7 +40,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       "product_with_video",
       products,
     );
-    return "Products updated";
+    return {
+      success: true,
+      message: "Product updated successfully",
+    };
   } else if (request.method === "PUT") {
     const formData = await parseFormData(request);
     const url = new URL(request.url);
@@ -81,6 +90,49 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       metafieldData,
     };
   }
+  if (request.method === "PATCH") {
+    const url = new URL(request.url);
+    const metafieldId = `gid://shopify/Metafield/${url.pathname.split("/").pop()}`;
+    const formData = await request.formData();
+    const videoProducts = formData.get("videoProducts") as string;
+    console.log(videoProducts, "video prodycts");
+    const shopId = await getShopId(admin);
+    const incomingData = JSON.parse(videoProducts);
+    const metafield = await getShopMetafield(
+      admin,
+      "Product_page",
+      "product_with_video",
+    );
+    console.log(metafield, "metafied");
+    console.log(metafield?.jsonValue, "jvalu");
+    const ids = new Set(incomingData.map((item: any) => item.videoId));
+    const deletedId = metafield?.jsonValue
+      ?.filter((item: any) => {
+        return item?.videoUrls?.some((video: any) => !ids.has(video?.videoId));
+      })
+      .map((data: any) => data.videoUrls?.map((video: any) => video.videoId))
+      .flat();
+    console.log(deletedId, "delted id");
+    if (deletedId) {
+      await deleteGenericFiles(admin, deletedId);
+    }
+    const currentJsonValue = metafield.jsonValue;
+    const updatedData = [
+      {
+        ...currentJsonValue,
+        videoUrls: incomingData,
+      },
+    ];
+    console.log(updatedData, "updated datat");
+    // const updateMetafiled = await updateMetafield(
+    //   admin,
+    //   shopId,
+    //   "Product_page",
+    //   "product_with_video",
+    //   updatedData,
+    // );
+    return { data: "updateMetafiled" };
+  }
   return null;
 };
 
@@ -100,18 +152,41 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     admin,
     productIds,
   );
-
+  const VideoSettingQuery = `
+      query GetMetafield {
+        shop {
+          metafield(namespace: "cartmade", key: "video_carousel_setting") {
+            id
+            key
+            jsonValue
+            type
+            updatedAt
+          }
+        }
+      }
+    `;
+  const videoData = await fetchGraphQLQuery(admin, VideoSettingQuery);
+  const settingData =
+    videoData.data.shop.metafield !== null
+      ? videoData.data.shop.metafield.jsonValue
+      : {};
   return {
     productInfo,
+    settingData,
   };
 };
 const PDPSettings = () => {
-  const loaderData: any = useLoaderData();
-  const [items, setItems] = useState<any[]>(loaderData?.productInfo || []);
-
-  const [productId, setProductId] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const fetcher = useFetcher();
+  const loaderData: any = useLoaderData(),
+    [items, setItems] = useState<any[]>(loaderData?.productInfo || []),
+    [isLoading, setIsLoading] = useState<boolean>(false),
+    [showModal, setShowModal] = useState<boolean>(false),
+    [productId, setProductId] = useState<string>(""),
+    fileInputRef = useRef<HTMLInputElement>(null),
+    [currentVideoUrls, setCurrentVideoUrls] = useState<any[]>([]),
+    fetcher = useFetcher();
+  useEffect(() => {
+    setItems(loaderData?.productInfo || []);
+  }, [loaderData?.productInfo]);
 
   const addProduct = async () => {
     const selected: any = await shopify.resourcePicker({
@@ -171,8 +246,6 @@ const PDPSettings = () => {
     }
   };
 
-  console.log(loaderData, "loaderdata");
-  console.log(items, "itemss");
   return (
     <Page
       title="Product Page"
@@ -188,10 +261,19 @@ const PDPSettings = () => {
             <table className="min-w-full bg-white border border-gray-300">
               <thead>
                 <tr>
-                  <th className="px-4 py-2 border-b border-gray-300">Image</th>
-                  <th className="px-4 py-2 border-b border-gray-300">Title</th>
-                  <th className="px-4 py-2 border-b border-gray-300">Handle</th>
-                  <th className="px-4 py-2 border-b border-gray-300">
+                  <th className="px-4 text-left w-[10%] py-2 border-b border-gray-300">
+                    Image
+                  </th>
+                  <th className="px-4 text-left w-[25%] py-2 border-b border-gray-300">
+                    Title
+                  </th>
+                  <th className="px-4 text-left  w-[20%] py-2 border-b border-gray-300">
+                    Handle
+                  </th>
+                  <th className="px-4 text-left w-[20%]  py-2 border-b border-gray-300">
+                    Preview
+                  </th>
+                  <th className="px-4 w-[25%] text-left py-2 border-b border-gray-300">
                     Actions
                   </th>
                 </tr>
@@ -199,7 +281,7 @@ const PDPSettings = () => {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-100">
-                    <td className="px-4 py-2 border-b border-gray-300">
+                    <td className="px-4 py-2 w-[10%] border-b border-gray-300">
                       <img
                         src={
                           item.imageUrl ||
@@ -209,13 +291,30 @@ const PDPSettings = () => {
                         className="h-16 w-16 object-cover"
                       />
                     </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
+                    <td className="px-4 w-[25%] py-2 border-b border-gray-300">
                       {item.title}
                     </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
-                      {item.handle}
+                    <td className="px-4   w-[20%] py-2 border-b border-gray-300">
+                      {item?.handle || "No handle"}
                     </td>
-                    <td className="px-4 py-2 border-b border-gray-300">
+                    <td className="px-4 relative w-[20%] py-2 border-b border-gray-300">
+                      {item?.videoUrls?.length && (
+                        <span className="absolute top-1 text-black/50 ">
+                          Total video : {item?.videoUrls?.length}
+                        </span>
+                      )}
+
+                      <Button
+                        onClick={() => {
+                          setShowModal(true);
+                          setCurrentVideoUrls(item?.videoUrls);
+                        }}
+                        disabled={!item?.videoUrls?.length}
+                      >
+                        Preview video
+                      </Button>
+                    </td>
+                    <td className="px-4 w-[25%] py-2 border-b border-gray-300">
                       <div className="flex gap-2">
                         <input
                           type="file"
@@ -240,14 +339,6 @@ const PDPSettings = () => {
                           Remove
                         </Button>
                       </div>
-                      {item?.videoUrls?.length &&
-                        item?.videoUrls.map((video: any) => (
-                          <div key="12" className="w-12 h-12">
-                            <video height={50} width={50}>
-                              <source src={video.videoUrl} type="video/mp4" />
-                            </video>
-                          </div>
-                        ))}
                     </td>
                   </tr>
                 ))}
@@ -272,6 +363,15 @@ const PDPSettings = () => {
             </p>
           </EmptyState>
         </LegacyCard>
+      )}
+
+      {showModal && (
+        <Preview
+          isLoading={isLoading}
+          settingData={loaderData?.settingData}
+          videoUrls={currentVideoUrls}
+          setShowModal={setShowModal}
+        />
       )}
     </Page>
   );
