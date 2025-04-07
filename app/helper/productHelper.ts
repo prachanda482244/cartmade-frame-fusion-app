@@ -69,3 +69,74 @@ export const getProductMetafield = async (admin: any, productId: string) => {
   const metafield = result?.data?.product?.metafield;
   return metafield !== null ? metafield.jsonValue : {};
 };
+
+export const getVideoProduct = async (admin: any) => {
+  const query = `
+   query {
+  products(first:250){
+    edges{
+    node{
+      title
+      id
+      handle
+       featuredMedia{
+        preview{
+          image{
+            url
+          }
+        }
+      }
+     metafield(namespace:"frame_fusion" key:"products"){
+      jsonValue
+    }
+
+    }
+  }
+  }  }`;
+  const response = await admin.graphql(query);
+  const { data } = await response.json();
+  if (!data) {
+    return { success: false, message: "Failed to fetch products" };
+  }
+  const productWithVideo = data?.products?.edges?.map(
+    ({ node: { id, handle, title, featuredMedia, metafield } }: any) => ({
+      id,
+      handle,
+      title,
+      imageUrl:
+        featuredMedia === null
+          ? "https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+          : featuredMedia?.preview?.image?.url,
+      videoUrls: metafield === null ? [] : metafield?.jsonValue?.videoUrls,
+    }),
+  );
+  return productWithVideo;
+};
+
+export const getSpecificProductMetafield = async (
+  admin: any,
+  productId: string,
+) => {
+  const query = `
+  query getProductMetafield($id:ID!){
+  product(id:$id){
+    id
+    title
+    metafield(namespace:"frame_fusion" key:"products"){
+      jsonValue
+    }
+  }
+}
+  `;
+  const response = await admin.graphql(query, {
+    variables: {
+      id: productId,
+    },
+  });
+
+  const { data } = await response.json();
+  if (!data) return { success: false, message: "Failed to retrieve product" };
+  const metafield = data?.product?.metafield;
+  const productMetafield = metafield === null ? [] : metafield?.jsonValue;
+  return productMetafield;
+};

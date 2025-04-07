@@ -11,23 +11,30 @@ import { useEffect, useState } from "react";
 
 const Preview = ({
   setShowModal,
+  productId,
   videoUrls,
   settingData,
   isLoading,
 }: {
   setShowModal: any;
+  productId: string;
   videoUrls: { videoUrl: string }[];
   settingData: any;
   isLoading: boolean;
 }) => {
   const [items, setItems] = useState(videoUrls),
     [activeVideoUrl, setActiveVideoUrl] = useState<string>(""),
+    [isOpen, setIsOpen] = useState<boolean>(true),
+    [loading, setLoading] = useState<boolean>(false),
     fetcher = useFetcher();
   useEffect(() => {
+    setLoading(false);
     setItems(videoUrls);
   }, [videoUrls]);
   const handleSubmit = async () => {
+    setLoading(true);
     const formData = new FormData();
+    formData.append("productId", productId);
     formData.append("videoProducts", JSON.stringify(items));
     formData.append("flag", "videoProduct");
     fetcher.submit(formData, { method: "PATCH" });
@@ -37,6 +44,7 @@ const Preview = ({
     setShowActionButtons(false);
   };
   const handleDeleteVideo = (url: string) => {
+    setShowActionButtons(true);
     setItems((prevItems) => prevItems.filter((item) => item.videoUrl !== url));
     shopify.saveBar.show("my-save-bar");
   };
@@ -59,7 +67,6 @@ const Preview = ({
 
     setItems(newItems);
   };
-  const [isOpen, setIsOpen] = useState<boolean>(true);
   return isOpen ? (
     <div
       onClick={(e) => {
@@ -110,7 +117,11 @@ const Preview = ({
                     >
                       Discard
                     </Button>
-                    <Button onClick={handleSubmit} variant="primary">
+                    <Button
+                      loading={loading && fetcher.state === "submitting"}
+                      onClick={handleSubmit}
+                      variant="primary"
+                    >
                       Save
                     </Button>
                   </>
