@@ -152,7 +152,6 @@ const PDPSettings = () => {
     fileInputRef = useRef<HTMLInputElement>(null),
     [currentVideoUrls, setCurrentVideoUrls] = useState<any[]>([]),
     fetcher = useFetcher();
-  console.log(loaderData?.productInfo, "prodictysts");
   useEffect(() => {
     setIsLoading(false);
     setItems(loaderData?.productInfo || []);
