@@ -3,7 +3,7 @@
 client_id = "6584b623d2297c6e18d1d91c103bfe69"
 name = "frame-fusion"
 handle = "frame-fusion"
-application_url = "https://shaved-focusing-current-lady.trycloudflare.com"
+application_url = "https://volleyball-tvs-extent-mixer.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_files,read_products,write_files,write_products,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://shaved-focusing-current-lady.trycloudflare.com/auth/callback",
-  "https://shaved-focusing-current-lady.trycloudflare.com/auth/shopify/callback",
-  "https://shaved-focusing-current-lady.trycloudflare.com/api/auth/callback"
+  "https://volleyball-tvs-extent-mixer.trycloudflare.com/auth/callback",
+  "https://volleyball-tvs-extent-mixer.trycloudflare.com/auth/shopify/callback",
+  "https://volleyball-tvs-extent-mixer.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

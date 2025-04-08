@@ -10,6 +10,8 @@
   integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw=="
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {{ 'video-carousel.css' | asset_url | stylesheet_tag }}
+
+<script src="{{ 'pdpcarousel.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'carousel.js' | asset_url}}" defer="defer"></script>
 
 {%- style -%}
@@ -26,16 +28,19 @@ padding-bottom: {{ block.settings.padding_bottom }}px;
 }
 {%- endstyle -%}
 
-
-
 {{ 'main.css' | asset_url | stylesheet_tag }}
 {% assign videoCarouselMetafields = shop.metafields.carousel-title %}
 {% assign videoCarouselTitle = videoCarouselMetafields[block.settings.metafield_key] %}
 {% assign videoCarouselSettings = shop.metafields.cartmade['video_carousel_setting'] %}
-
 {% assign videoCarouselData = videoCarouselTitle.value %}
 {% assign videoCarouselSettingData = videoCarouselSettings.value %}
 {% assign videoCarouselInfo = videoCarouselData.videoUrls %}
+
+<p>Check  123</p>
+{% if template.name=="product"  %}
+{%  assign productVideo = product.metafields.frame_fusion.products.value %}
+{{ productVideo }}
+{%endif%}
 
 <section class="section--{{section.id}}-padding">
   <div class="page-width">
@@ -245,7 +250,7 @@ padding-bottom: {{ block.settings.padding_bottom }}px;
 {
 "name": "App video carousel",
 "class": "section",
-"target": "section",
+"target": "head",
 "settings": [
 {
 "type": "text",

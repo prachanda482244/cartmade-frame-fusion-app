@@ -251,7 +251,7 @@ const PDPSettings = () => {
                           setProductId(item.id);
                         }}
                       >
-                        Add Video
+                        Add Videos
                       </Button>
                     </div>
                   </td>

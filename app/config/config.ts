@@ -1,5 +1,5 @@
 import ButtonDesign from "app/components/ButtonDesign";
-import CarouselDesign from "app/components/CarouselDesign";
+// import CarouselSetting from "app/components/CarouselSetting";
 
 export interface buttonsNameTypes {
   index: number;
@@ -18,7 +18,7 @@ export const buttonsName: buttonsNameTypes[] = [
   // {
   //   index: 2,
   //   link: "carouselDesign",
-  //   name: "Carousel Design",
-  //   component: CarouselDesign,
+  //   name: "Carousel Settting",
+  //   component: CarouselSetting,
   // },
 ];

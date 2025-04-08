@@ -303,6 +303,12 @@ const VideoSettingPage = () => {
       //     ],
       //   },
       // ]}
+      // secondaryActions={[
+      //   {
+      //     content: "View on your store",
+      //     onAction: () => alert("View on your store action"),
+      //   },
+      // ]}
       primaryAction={{
         content: isLoading ? "Uploading..." : "Upload",
         disabled: isLoading,
@@ -319,8 +325,7 @@ const VideoSettingPage = () => {
         name="video"
       />
 
-      {/*
-      <Modal id="url">
+      {/* <Modal id="url">
         <p className="py-2 px-2 flex flex-col gap-2">
           <Select
             label="Embedded link"
@@ -353,12 +358,14 @@ const VideoSettingPage = () => {
         </p>
         <TitleBar title="Upload Url">
           <button onClick={() => shopify.modal.hide("url")}>Cancel</button>
-          <button onClick={handleUploadUrl} variant="primary">
+          <button
+            //  onClick={handleUploadUrl}
+            variant="primary"
+          >
             Upload
           </button>
         </TitleBar>
-      </Modal>
-      */}
+      </Modal> */}
 
       {loaderData.videoUrls[0]?.url === "" || !loaderData.videoUrls.length ? (
         <LegacyCard sectioned>
